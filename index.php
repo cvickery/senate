@@ -9,14 +9,14 @@
     <h1>Queens College Academic Senate</h1>
     <h2>Senate Committees</h2>
     <p>
-      This is a support site for certain Academic Senate committees. For information about
-      the Senate itself, go to
+      This is a support site for certain Academic Senate curriculum-related committees.
+      For information about the Senate itself, go to
       <a href="http://www.qc.cuny.edu/Academics/AcademicSenate/Pages/default.aspx">
       The Senate Web Site</a>.
     </p>
 
     <dl>
-
+      <!--
       <dt>
         <a href="./Curriculum/Pathways">Ad Hoc Committee on Pathways</a>
       </dt>
@@ -42,6 +42,7 @@
           href="mailto:Christopher.Vickery@qc.cuny.edu">Christopher Vickery</a>
         </p>
       </dd>
+      -->
       <dt><a href='./Curriculum'>Curriculum Matters</a></dt>
       <dd>
           See also the <a
