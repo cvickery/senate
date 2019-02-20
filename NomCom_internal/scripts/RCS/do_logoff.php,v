@@ -1,0 +1,97 @@
+head	1.3;
+access;
+symbols;
+locks
+	vickery:1.3; strict;
+comment	@# @;
+
+
+1.3
+date	2010.01.02.06.21.09;	author vickery;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2009.12.29.05.24.26;	author vickery;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2009.12.28.05.43.31;	author vickery;	state Exp;
+branches;
+next	;
+
+
+desc
+@Clear the session of credentials and redirect to login form.
+@
+
+
+1.3
+log
+@Changed 'login_error' to 'login_message in $_SESSION.
+@
+text
+@<?php
+  // $Id: do_logoff.php,v 1.2 2009/12/29 05:24:26 vickery Exp vickery $
+  /*
+   *  Log the user out and redirect them to the logon page.
+   *
+   *    $Log: do_logoff.php,v $
+   *    Revision 1.2  2009/12/29 05:24:26  vickery
+   *    Whitespace and bug fixes.
+   *    Restrict administrative access to administrators.
+   *
+   *
+   */
+  session_start();
+  $level = error_reporting(0);
+  unset($_POST['email']);
+  unset($_POST['password']);
+  unset($_SESSION['person']);
+  unset($_SESSION['committees']);
+  unset($_SESSION['IS_NOMINATING']);
+  unset($_SESSION['login_message']);
+  error_reporting($level);
+  header("Location: ../login.xhtml");
+?>
+@
+
+
+1.2
+log
+@Whitespace and bug fixes.
+Restrict administrative access to administrators.
+@
+text
+@d2 1
+a2 1
+  // $Id: do_logoff.php,v 1.1 2009/12/28 05:43:31 vickery Exp vickery $
+d6 5
+a10 1
+   *    $Log$
+d20 1
+a20 1
+  unset($_SESSION['login_error']);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d2 8
+a9 4
+  // $Id$
+	/*
+	 *	Log the user out and redirect them to the logon page.
+	 */
+d11 2
+d16 1
+a16 1
+	unset($_SESSION['logon_error']);
+d18 1
+a18 1
+	header("Location: ../login.xhtml");
+@

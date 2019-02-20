@@ -1,0 +1,281 @@
+head	1.4;
+access;
+symbols;
+locks
+	vickery:1.4; strict;
+comment	@# @;
+
+
+1.4
+date	2010.01.10.01.31.28;	author vickery;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2010.01.10.00.08.13;	author vickery;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2009.12.31.22.06.17;	author vickery;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2009.12.31.05.16.09;	author vickery;	state Exp;
+branches;
+next	;
+
+
+desc
+@Web interface for generating a new set of seats when old ones' terms expire.
+@
+
+
+1.4
+log
+@Added nav-list.
+Removed validation links: the validators cannot log in.
+@
+text
+@<?php
+//  $Id: rollover_seats.xhtml,v 1.3 2010/01/10 00:08:13 vickery Exp vickery $
+/*
+ *    Utility for creating a new set of seats when old ones’ terms expire.
+ *    Must be run by a db administrator.
+ *
+ *      $Log: rollover_seats.xhtml,v $
+ *      Revision 1.3  2010/01/10 00:08:13  vickery
+ *      Handle attempts to access page by non-administrators.
+ *
+ *      Revision 1.2  2009/12/31 22:06:17  vickery
+ *      Changed wording in the instructions.
+ *
+ *      Revision 1.1  2009/12/31 05:16:09  vickery
+ *      Initial revision
+ *
+ *
+ */
+  //  Must be HTTPS
+  if (! isset($_SERVER['HTTPS']))
+  {
+    header("Location: https://{$_SERVER['SERVER_NAME']}{$_SERVER['REQUEST_URI']}");
+    exit;
+  }
+  session_start();
+  //  Verify the user is_db_admin
+  if (! isset($_SESSION['person']) || ($_SESSION['person']['is_db_admin'] !== 't'))
+  {
+    $_SESSION['login_error'] = "Not Authorized";
+    $_SESSION['requested_page'] = $_SERVER['REQUEST_URI'];
+    if (isset($_SESSION['person']))
+    {
+      unset($_SESSION['requested_page']);
+    }
+    header("Location: scripts/do_logoff.php");
+    exit;
+  }
+  unset($_SESSION['requested_page']);
+
+  //  Deliver correct MIME type
+  $content_type = "";
+  header("Vary: Accept");
+  if (  array_key_exists("HTTP_ACCEPT", $_SERVER) &&
+        stristr($_SERVER["HTTP_ACCEPT"], "application/xhtml+xml") ||
+        stristr($_SERVER["HTTP_USER_AGENT"], "W3C_Validator")
+      )
+  {
+    $content_type = "application/xhtml+xml";
+    header("Content-type: application/xhtml+xml");
+    header("Last-Modified: "
+                    .gmdate('r',filemtime($_SERVER['SCRIPT_FILENAME'])));
+    print("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+  }
+  else
+  {
+    $content_type = "text/html";
+    header("Content-type: text/html; charset=utf-8");
+  }
+ ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+  "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+  <head>
+    <meta http-equiv="Content-Type" content="<?php echo $content_type; ?>; charset=UTF-8" />
+    <title>Roll Seats Over</title>
+    <link rel="shortcut icon" href="../images/AS.ico" />
+    <link rel="stylesheet"
+          type="text/css"
+          media="all"
+          href="css/nomcom-internal.css"
+    />
+    <script type="text/javascript" src="scripts/rollover_seats.js"></script>
+  </head>
+
+  <body>
+    <div id="header">
+      <img src="images/AS_Gavel.png" alt="" />
+      <h1>Nominating Committee Internal Site</h1>
+      <h2>Roll Seats Over</h2>
+    </div>
+    <ul id="nav-list">
+      <li><a href="../NomCom/index.xhtml">Public Site</a></li>
+      <li><a href="./index.xhtml">Internal Site</a></li>
+      <?php
+      if (isset($_SESSION['person']) && $_SESSION['person']['is_db_admin'] === 't')
+      {
+        echo <<<EOT
+      <li><a href="./manage_people.xhtml">Manage People</a></li>
+      <li><a href="./manage_seats.xhtml">Manage Seats</a></li>
+      <li class="current-page"><a href="./rollover_seats.xhtml">Rollover Seats</a></li>
+EOT;
+      }
+      ?>
+      <li><a href="./Pending_Applications">Pending Applications</a></li>
+      <li><a href="./Old_Applications">Old Applications</a></li>
+    </ul>
+    <div id="content">
+      <h2>Instructions</h2>
+      <p>
+        Use this page to create new seats when old ones expire. For example, after the December elections meeting all
+        the seats that expire in December have to be replaced by new ones that expire in two years. Current seat
+        holders who have submitted renewal applications are automatically carried over into the new seats. But if no
+        renewal was received or if the expiring seat was open, the new seat will be open.
+      </p>
+      <p>
+        When you click the &ldquo;Roll Seats Over Now!&rdquo; button, you will get a record of how
+        many seats were updated and a list of all renewals.
+      </p>
+      <p>
+        After the seats have been rolled over, use the <a href="manage_seats.xhtml">Manage Seats</a> page to enter
+        elections and vacancies.
+      </p>
+      <ol>
+        <li>
+          Enter the date to be used as the election date for auto-renewals:
+          <input type="text" id="election-date-input" />
+        </li>
+        <li>
+          Click to replace all expired seats:
+          <button id="rollover-button">Roll Seats Over Now!</button>
+        </li>
+      </ol>
+      <div id="results">
+        &nbsp;
+      </div>
+    </div>
+    <div id="footer">
+      <em>
+        Last updated <?php echo gmdate("Y-m-d", filemtime($_SERVER['SCRIPT_FILENAME'])); ?>.
+      </em>
+    </div>
+  </body>
+</html>
+@
+
+
+1.3
+log
+@Handle attempts to access page by non-administrators.
+@
+text
+@d2 1
+a2 1
+//  $Id: rollover_seats.xhtml,v 1.2 2009/12/31 22:06:17 vickery Exp vickery $
+d8 3
+d31 1
+a31 1
+    if ($_SESSION['person']['is_db_admin'] !== 't')
+d77 50
+a126 35
+
+  <div id="header">
+    <img src="images/AS_Gavel.png" alt="" />
+    <h1>Nominating Committee Internal Site</h1>
+    <h2>Roll Seats Over</h2>
+  </div>
+
+  <div id="content">
+    <h2>Instructions</h2>
+    <p>
+      Use this page to create new seats when old ones expire. For example, after the December elections meeting all
+      the seats that expire in December have to be replaced by new ones that expire in two years. Current seat
+      holders who have submitted renewal applications are automatically carried over into the new seats. But if no
+      renewal was received or if the expiring seat was open, the new seat will be open.
+    </p>
+    <p>
+      When you click the &ldquo;Roll Seats Over Now!&rdquo; button, you will get a record of how
+      many seats were updated and a list of all renewals.
+    </p>
+    <p>
+      After the seats have been rolled over, use the <a href="manage_seats.xhtml">Manage Seats</a> page to enter
+      elections and vacancies.
+    </p>
+    <ol>
+      <li>
+        Enter the date to be used as the election date for auto-renewals:
+        <input type="text" id="election-date-input" />
+      </li>
+      <li>
+        Click to replace all expired seats:
+        <button id="rollover-button">Roll Seats Over Now!</button>
+      </li>
+    </ol>
+    <div id="results">
+      &nbsp;
+d128 1
+a128 4
+  </div>
+  <div id="footer">
+      <a href="http://validator.w3.org/check?uri=referer">XHTML</a>&nbsp;-&nbsp;<a
+         href="http://jigsaw.w3.org/css-validator/check/referer">CSS</a>
+d132 2
+a133 2
+  </div>
+</body>
+@
+
+
+1.2
+log
+@Changed wording in the instructions.
+@
+text
+@d2 1
+a2 1
+//  $Id: rollover_seats.xhtml,v 1.1 2009/12/31 05:16:09 vickery Exp vickery $
+d8 3
+d23 2
+a24 1
+  if (!isset($_SESSION['person']) || ($_SESSION['person']['is_db_admin'] !== 't') )
+d26 7
+a32 1
+    header("Location: index.xhtml");
+d35 1
+d90 2
+a91 3
+      When you click the 
+      &ldquo;Roll Seats Over Now!&rdquo; button, you will get a record of how many seats were updated and
+      a list of all renewals.
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d2 1
+a2 1
+//  $Id$
+d7 4
+a10 1
+ *      $Log$
+d80 2
+a81 1
+      &ldquo;Rollover&rdquo; button, you will see a list of all the seats that were rolled over.
+d84 1
+a84 1
+      After the seats have been rolled over, use the <em>Manage Seats</em> page to enter
+@

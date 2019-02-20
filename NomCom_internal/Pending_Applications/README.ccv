@@ -1,0 +1,31 @@
+#! /usr/local/bin/bash
+
+# 2010-11-25: Converted this into a script named process_apps.
+# It throws and ambiguous redirect warning, but seems to work (???)
+#
+# 2010-08-26: When an application comes into gmail, just select all the
+# content and paste it into a new Dreamweaver page while in design view.
+#
+# 2010-03-03: Save email applications as HTML files. Thunderbird does a
+# decent job, but you have to delete the first 11 and last 2 lines of
+# each file. 
+
+echo "Cleaning up the html..."
+rm tidy.out
+for f in *.html; do echo $f >> tidy.out; tidy -niq -wrap 131 -utf8 -asxhtml < $f > tidied/$f 2>> tidy.out; done
+
+echo "Generating people.xml..."
+echo '<people>' > people.xml; for f in tidied/*.html; do html2xml.php $f >> people.xml; mv $f .; done; echo '</people>' >> people.xml;
+
+cat <<END
+  Now hand-edit people.xml as necessary to get it in proper shape.
+  For example, graduation dates are YYYY-02 or YYYY-06 or YYYY-09
+  Change EECE to Elementary and Early Childhood Education
+  Put phone numbers in proper format.
+ 
+  Then run xml2sql.php to update the database with the people information in
+  people.xml.
+ 
+  If that looks good, copy people.xml to babbage and run xml2sql.php there to
+  upate the live database.
+

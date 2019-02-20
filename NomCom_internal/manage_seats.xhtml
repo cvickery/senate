@@ -1,0 +1,172 @@
+<?php
+//  $Id: manage_seats.xhtml,v 1.6 2010/08/30 05:33:57 vickery Exp vickery $
+/*
+ *  $Log: manage_seats.xhtml,v $
+ *  Revision 1.6  2010/08/30 05:33:57  vickery
+ *  Added fieldset so user can say whether pro-tem or regular seat holder
+ *  resigned.
+ *
+ *  Revision 1.5  2010/01/09 23:47:58  vickery
+ *  Changed new-chair radio button to chair-change to make code
+ *  more consisten with other parts of the application.
+ *
+ *  Revision 1.4  2010/01/08 06:15:55  vickery
+ *  Added support for requested_page session variable.
+ *  Added chair-change radio button to person-form.
+ *
+ *  Revision 1.3  2009/12/29 05:26:22  vickery
+ *  Implement login restrictions.
+ *  Only NomCom members have basic access; db administrators have access
+ *  to management pages in addition.
+ *
+ *  Revision 1.2  2009/11/02 21:03:05  vickery
+ *  Added radio button for renewals.
+ *
+ *  Revision 1.1  2009/11/02 00:55:12  vickery
+ *  Initial revision
+ *
+ */
+  session_start();
+  //  Force HTTPS connection if not already in place.
+  if (! isset($_SERVER['HTTPS']))
+  {
+    header("Location: https://{$_SERVER['SERVER_NAME']}{$_SERVER['REQUEST_URI']}");
+    exit;
+  }
+  //  Verify the user is_db_admin
+  if (! isset($_SESSION['person']) || ($_SESSION['person']['is_db_admin'] !== 't'))
+  {
+    $_SESSION['login_error'] = "Not Authorized";
+    $_SESSION['requested_page'] = $_SERVER['REQUEST_URI'];
+    header("Location: scripts/do_logoff.php");
+    exit;
+  }
+  unset($_SESSION['requested_page']);
+  require_once("scripts/manage_seats.php");
+
+  header("Vary: Accept");
+  if (array_key_exists("HTTP_ACCEPT", $_SERVER) &&
+      stristr($_SERVER["HTTP_ACCEPT"], "application/xhtml+xml") ||
+      stristr($_SERVER["HTTP_USER_AGENT"], "W3C_Validator")
+      )
+  {
+    header("Content-type: application/xhtml+xml");
+    print("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+  }
+  else
+  {
+    header("Content-type: text/html; charset=utf-8");
+  }
+ ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+                      "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+  <head>
+    <title>Manage Academic Senate Committee Seats</title>
+    <link rel="stylesheet"
+          type="text/css"
+          media="all"
+          href="css/manage_seats.css" />
+    <script type="text/javascript" src="scripts/core.js"></script>
+    <script type="text/javascript" src="scripts/json2.js"></script>
+    <script type="text/javascript" src="scripts/manage_seats.js"></script>
+  </head>
+  <body>
+    <h1>Manage Academic Senate Committee Seats</h1>
+
+    <div id='instructions'>
+      <h2>Instructions</h2>
+      <ol>
+        <li>Click  in the &ldquo;Seat Holder&rdquo; column to make changes.</li>
+      </ol>
+    </div>
+    <?php
+    echo <<<EOT
+    <pre id="db-times">
+    Most recent election recorded: $lastElection
+    Most recent renewal recorded:  $lastRenewal
+    Last db update:                $lastModified
+    </pre>
+EOT;
+    ?>
+    <form id='person-form' action='nosuchpage.htm'>
+        <fieldset id="event-type-fieldset">
+          <legend>What Changed?</legend>
+
+          <input type='radio' name='event-type' value='renewal' id='renewal-radio' />
+          <label for='renewal-radio' class="radio-button-label">Renewal Received</label>
+
+          <input type='radio' name='event-type' value='graduation' id='graduation-radio' />
+          <label for='graduation-radio' class="radio-button-label">Graduation</label>
+
+          <input type='radio' name='event-type' value='resignation' id='resignation-radio' />
+          <label for='resignation-radio' class="radio-button-label">Resignation</label>
+
+          <input type='radio' name='event-type' value='departure' id='departure-radio' />
+          <label for='departure-radio' class="radio-button-label">No longer at QC</label>
+
+          <input type='radio' name='event-type' value='pro-tem' id='pro-tem-radio' />
+          <label for='pro-tem-radio' class="radio-button-label">Temporary Replacement</label>
+
+          <input type='radio' name='event-type' value='chair-change' id='chair-change-radio' />
+          <label for='chair-change-radio' class="radio-button-label">Chair Change</label>
+
+          <input type='radio' name='event-type' value='pro-tem' id='procedural-radio' />
+          <label for='procedural-radio' class="radio-button-label">Procedural Vacancy</label>
+
+        </fieldset>
+        <fieldset id="pro-tem-election-date-fieldset">
+          <label for='pro-tem-election-date' class='text-input-label'><em>Pro tem</em> election date:</label>
+          <input id='pro-tem-election-date' type='text' name='pro-tem-election-date' value='<?php echo date("F j, Y"); ?>' />
+        </fieldset>
+        <fieldset id="pro-tem-expiration-date-fieldset">
+          <label for='pro-tem-expiration-date' class='text-input-label'><em>Pro tem</em> expiration date:</label>
+          <input id='pro-tem-expiration-date' type='text' name='pro-tem-expiration-date' 
+                 value='<?php echo date("F j, Y"); ?>' />
+        </fieldset>
+        <fieldset id='person-select-fieldset'>
+          <label for="person-text" id="person-prompt-label">Select a person:</label>
+          <input type="text" id="person-text" />
+        </fieldset>
+        <fieldset id='pro-tem-or-seat-holder-fieldset'>
+          <legend>Which person <span id='which-person-event-type'>resigned</span>?</legend>
+          <input type='radio' id='pro-tem-person-radio' name='pro-tem-or-seat-holder' checked='checked'/>
+          <label for='pro-tem-person-radio'><span id='pro-tem-person-name'>nobody</span> (<em>pro tem</em>)</label>
+          <input type='radio' id='seat-holder-person-radio' name='pro-tem-or-seat-holder' />
+          <label for='seat-holder-person-radio'><span id='seat-holder-person-name'>nobody</span></label>
+        </fieldset>
+        <fieldset id="election-date-fieldset">
+          <label for='election-date' class='text-input-label'>Election date?</label>
+          <input id='election-date' type='text' name='election-date' value='<?php echo date("F j, Y"); ?>' />
+        </fieldset>
+        <fieldset id="vacancy-date-fieldset">
+          <label for='vacancy-date' id='vacancy-date-prompt-label' class='text-input-label'>Vacancy date?</label>
+          <input id='vacancy-date' type='text' name='vacancy-date' value='<?php echo date("F j, Y"); ?>' />
+        </fieldset>
+        <fieldset id='procedural-comment-fieldset'>
+          <legend>What happened?</legend>
+          <textarea id='procedural-comment-text' rows='3' cols='25'></textarea>
+        </fieldset>
+        <div id="cancel-submit">
+          <button type="button" id="cancel-button">Cancel</button>
+          <button type="submit" id="submit-button">Submit</button>
+        </div>
+    </form>
+    <div class="faculty-table">
+      <table id="faculty-seats" class="seats-table">
+        <caption>
+          Faculty Seats
+        </caption>
+        <?php generateFacultyRows(); ?>
+      </table>
+    </div>
+    <div class="student-table">
+      <table id="student-seats" class="seats-table">
+        <caption>
+          Student Seats
+        </caption>
+        <?php generateStudentRows(); ?>
+      </table>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,137 @@
+<?php
+
+//  problem.xhtml
+/*  Action page for problem_form.php, which gets included in web pages so people can report
+ *  bugs. Sends email to the site administrator, so be sure apache is configured to have a
+ *  valid email address set for ServerAdmin!
+ */
+  session_start();
+  require_once('Mail.php');
+  require_once('Mail/mime.php');
+  require_once('Mail/mail.php');
+  require_once('credentials.inc');
+  $admin_email = (isset($_SERVER['SERVER_ADMIN']) && strstr($_SERVER['SERVER_ADMIN'], "cuny.edu") )
+    ? $_SERVER['SERVER_ADMIN']
+    : "vickery@babbage.cs.qc.cuny.edu";
+
+  // Start the page
+  $mime_type = "text/html";
+  $html_attributes="lang=\"en\"";
+  if ( array_key_exists("HTTP_ACCEPT", $_SERVER) &&
+        (stristr($_SERVER["HTTP_ACCEPT"], "application/xhtml") ||
+         stristr($_SERVER["HTTP_ACCEPT"], "application/xml") )
+       ||
+       (array_key_exists("HTTP_USER_AGENT", $_SERVER) &&
+        stristr($_SERVER["HTTP_USER_AGENT"], "W3C_Validator"))
+     )
+  {
+    $mime_type = "application/xhtml+xml";
+    $html_attributes = "xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\"";
+    header("Content-type: $mime_type");
+    echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+  }
+  else
+  {
+    header("Content-type: $mime_type; charset=utf-8");
+  }
+?>
+<!DOCTYPE html>
+<html <?php echo $html_attributes;?>>
+  <head>
+    <title>Website Problem</title>
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="stylesheet" href="/css/problem.css" type="text/css" />
+    <!--[if IE]>
+      <link rel="stylesheet" type="text/css" href="css/ie.css" />
+    <![endif]-->
+  </head>
+  <body>
+    <h1>Website Problem</h1>
+    <?php
+      $problem_page = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : 'Unknown page';
+      $description  = isset($_POST['description'])    ? $_POST['description']    : 'No description given';
+      $remote_host  = isset($_SERVER['REMOTE_HOST'])  ? $_SERVER['REMOTE_HOST']  : 'Unknown remote host';
+      $remote_addr  = isset($_SERVER['REMOTE_ADDR'])  ? $_SERVER['REMOTE_ADDR']  : 'Unknown remote addr';
+      $qc_email     = isset($_SESSION['qc_email'])    ? $_SESSION['qc_email']    : 'No QC email address';
+      $alt_email    = isset($_SESSION['alt_email'])   ? $_SESSION['alt_email']   : 'No alternate email address';
+
+      //  Set up plain text version of the email propblem report
+      $txt_description = str_replace("\n", "\n  ", $description);  // left margin
+      $text = <<<END_TEXT
+   Problem child: $problem_page
+Problem reporter: $qc_email
+ Alternate email: $alt_email
+     Remote host: $remote_host
+       Remote ip: $remote_addr
+  Problem report: $txt_description
+END_TEXT;
+
+      //  Set up html version of the problem report
+      $html_description = htmlspecialchars($description);
+      $html_description = str_replace("\n", "<br />", $html_description);  // line breaks
+      $html = <<<END_HTML
+      <html>
+        <body>
+          <p>Problem page:     <strong>$problem_page</strong></p>
+          <fieldset><legend>Problem Report</legend>$html_description</fieldset>
+          <p>Problem reporter: <strong>$qc_email</strong></p>
+          <p>Alternate email:  <strong>$alt_email</strong></p>
+          <p>Remote host:      <strong>$remote_host</strong></p>
+          <p>Remote ip:        <strong>$remote_addr</strong></p>
+        </body>
+      </html>
+END_HTML;
+
+      //  Set up and send the mail as a multipart MIME message using smtp.
+      $hdrs = array(
+              'From'          => "Senate Web Problem Reporting Agent<$admin_email>",
+              'To'            => "Senate Web Problem Solver<$admin_email>",
+              'Reply-To'      => "Senate Web Problem Solver<$admin_email>",
+              'Bcc'           => "Senate Web Problem Monitor<vickeryqc@gmail.com>",
+              'Subject'       => "Web page problem report",
+              'Message-ID'    => "<".uniqid()."@senate.qc.cuny.edu>",
+              'Date'          => date('r')
+              );
+      $crlf = "\n";
+      $mime = new Mail_mime(array('eol' => $crlf, 'text_charset' => 'utf-8', 'html_charset' => 'utf-8'));
+      $mime->setTXTBody($text);
+      $mime->setHTMLBody($html);
+      $body = $mime->get();
+      $hdrs = $mime->headers($hdrs);
+      $smtpinfo["host"] = "smtp.qc.cuny.edu";
+      $smtpinfo["port"] = "25";
+      $smtpinfo["auth"] = true;
+      $smtpinfo["username"] = $smtp_user;
+      $smtpinfo["password"] = $smtp_pass;
+      $mail =& Mail::factory('smtp', $smtpinfo);
+      $mime_status = $mail->send("$admin_email,vickeryqc@gmail.com", $hdrs, $body);
+      if ( PEAR::isError($mime_status) )
+      {
+        //  Report a reporting problem
+        $err_msg = $mime_status->getMessage();
+        echo <<<END_PROBLEM
+        <p class='error'>Unable to email your problem report: $err_msg</p>
+        <p>
+          Our only hope now is to send email manually to $admin_email to report
+          both the orginal problem at $problem_page and this problem in sending email as well!
+        </p>
+        <p>Apologies for the problems, and thanks for your help.</p>
+END_PROBLEM;
+      }
+      else
+      {
+        //  Confirm submission of the problem report
+        echo <<<END_THANKS
+        Thank you for reporting the problem you found on the page at 
+        <span class='action'>$problem_page</span>
+        <fieldset><legend>Problem Report</legend>
+        $html_description
+        </fieldset>
+        We’ve sent email to our super-savvy problem-fixer-upper team, and they will contact you 
+        if they need more information.
+        
+END_THANKS;
+      }
+    ?>
+  </body>
+</html>

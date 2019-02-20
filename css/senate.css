@@ -1,0 +1,56 @@
+/*  senate.css
+ */
+
+html, body {
+  margin:0;
+  padding:0;
+  background-color:#ccc;
+  color:#030;
+  font-family:Geneva, Arial, Helvetica, sans-serif;
+  font-size:16px;
+  }
+
+body {
+	margin:1em auto;
+	padding:1em;
+	max-width:927px;
+	background-color:#f8f8f8;
+	color:#363;
+	border:1px solid #363;
+	border-radius:0.25em;
+	box-shadow:#363 0.25em 0.25em 0.25em;
+}
+
+h1 {
+	text-align:center;
+  }
+
+dl {
+	background-color:#fff;
+  color#6f6;
+  border:1px solid green;
+  margin:2em auto;
+  padding:1em;
+  }
+
+dt{
+	margin-top:1em;
+  }
+dd {
+	margin-top:0.5em;
+  text-align:left;
+  }
+
+a, a:visited {
+	padding:0 0.5em;
+	background-color:#fff;
+  color:rgb(70,137,102);
+  }
+a:hover {
+	text-decoration:none;
+  color:#fff;
+  background-color:rgb(70,137,102);
+  }
+dt a, dt a:visited {
+	padding: 0.5em;
+  }

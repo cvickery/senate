@@ -1,0 +1,153 @@
+head	1.1;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.1
+date	2010.01.16.17.26.40;	author vickery;	state Exp;
+branches;
+next	;
+
+
+desc
+@This was the index file for this directory until January 2010.
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@<?php
+  $months = array("01" => "January",
+                  "02" => "February",
+                  "03" => "March",
+                  "04" => "April",
+                  "05" => "May",
+                  "06" => "June",
+                  "07" => "July",
+                  "08" => "August",
+                  "09" => "September",
+                  "10" => "October",
+                  "11" => "November",
+                  "12" => "December");
+  $current_year = "";
+  $start_table = "<table><tr><th>Application Date</th>"
+                  ."<th>Applicant Name</th></tr>\n";
+  //  php generate_link()
+  //  -------------------------------------------------------
+  /*  Extract application date and applicant name from a file
+   *  name in the form yyyy-mm-dd_First_Last.ext.
+   *  Also generates headers for years.
+   *  2009-04-20: Allow parentheses and apostrophes in names.
+   *  2008-03-04: Eliminated the second parameter, $key, because it was
+   *  not actually an index into an array. Changed the logic to allow
+   *  hyphens in people's names.
+   */
+  function generate_link($value)
+  {
+    GLOBAL $months, $current_year, $start_table;
+    preg_match('/(\d{4})-(\d{2})-(\d{2})_([\w-\(\)’\.]*)\.(x?html|pdf)$/', $value, $parts);
+    $year = $parts[1];
+    $month = $months[$parts[2]];
+    $day = $parts[3];
+    $name = str_replace("_", " ", $parts[4]);
+
+    if (strcmp($year, $current_year) != 0)
+    {
+      if ( $current_year != "" )
+      {
+        echo "</table>\n";
+      }
+      echo "<h2>".$year."</h2>";
+      echo $start_table."\n";
+      $current_year = $year;
+    }
+    echo "  <tr>\n  <td>$day $month</td>\n";
+    echo "    <td><a href=\"$value\">".$name."</a></td>\n";
+    echo "  </tr>\n";
+  }
+//  ---------------------------------------------------------------------------------------------
+  session_start();
+  if (array_key_exists("HTTP_ACCEPT", $_SERVER) &&
+      stristr($_SERVER["HTTP_ACCEPT"], "application/xhtml+xml"))
+  {
+    header("Content-type: application/xhtml+xml");
+    print("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+  }
+  else
+  {
+    header("Content-type: text/html; charset=utf-8");
+  }
+ ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+  "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+  <head>
+    <title>Nominating Committee Pending Applications</title>
+    <link rel="shortcut icon" href="../../images/AS.ico" />
+    <link rel="stylesheet" type="text/css" href="../css/nomcom-internal.css" />
+    <style type="text/css" media="all">
+      table { margin-left: 1em; }
+      td, th { padding: 0 0.5em 0 0.5em; text-align: left;}
+    </style>
+  </head>
+  <body>
+    <div id="header">
+      <img src="../images/AS_Gavel.png" alt="" />
+      <h1>Nominating Committee</h1>
+      <h2>Pending Applications</h2>
+    </div>
+
+    <ul id="nav-list">
+      <li><a href="../../NomCom/index.xhtml">Public Site</a></li>
+      <li><a href="../index.xhtml">Internal Site</a></li>
+      <?php
+      if (isset($_SESSION['person']) && $_SESSION['person']['is_db_admin'] === 't')
+      {
+        echo <<<EOT
+      <li><a href="../manage_people.xhtml">Manage People</a></li>
+      <li><a href="../manage_seats.xhtml">Manage Seats</a></li>
+      <li><a href="../rollover_seats.xhtml">Rollover Seats</a></li>
+EOT;
+      }
+      ?>
+      <li class="current-page"><a href="../Pending_Applications">Pending Applications</a></li>
+      <li><a href="../Old_Applications">Old Applications</a></li>
+    </ul>
+    <div id="content">
+        <?php
+          $i = 0;
+          $dir = opendir(".");
+
+          while ($file = readdir($dir))
+          {
+            //  Make script break in 2500 AD
+            if (preg_match("/2[0-4][0-9][[0-9]-[01][0-9]-[0-3][0-9].*(html|pdf)$/i", $file))
+            {
+              $files[$i++] = $file;
+            }
+          }
+          if ($i == 0)
+          {
+            echo "<h2>There are no pending applications.</h2>";
+          }
+          else
+          {
+            sort($files); // Changed from rsort() 2008-03-05
+            array_walk($files, "generate_link");
+            echo "</table>\n";
+          }
+        ?>
+    </div>
+    <div id="footer">
+      <em>
+        Last updated <?php echo date('Y-m-d', filemtime($_SERVER['SCRIPT_FILENAME'])); ?>
+      </em>
+    </div>
+  </body>
+</html>
+@

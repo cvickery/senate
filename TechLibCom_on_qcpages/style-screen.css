@@ -1,0 +1,3 @@
+html,body { font-family: sans-serif }
+a:visited { color: #990099; }
+a:hover   {text-decoration: none; background: #f0f0f0; color: black;}

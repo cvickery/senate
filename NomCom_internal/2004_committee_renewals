@@ -1,0 +1,91 @@
+#  This is a mini-database for soliciting comments from chairs about
+#  members whose terms are expiring.  For each committee there is a
+#  line starting with the word "name" followed by the committee name,
+#  then 1-2 lines with the email address and name for the committee's
+#  chair or chairs, and 1 or more lines with the names of the people
+#  whose terms are expiring.  These lines start with "faculty" or
+#  "student" as appropriate for the individual.
+
+#  *  Chair whose term is expiring
+#  ** Member who is filling a vacancy and does not need to reapply.
+
+#  Must specify expiration date at least once:
+date    December 2004
+
+name    Committee on Undergraduate Admissions & Re-entry Standards
+chair   A0503@aol.com                   Alan Brandman
+faculty E. Gordon Whatley
+student Christina Jimenez **
+student Helen Gold
+
+name    Campus Affairs Committee
+chair   ADeluise@qc1.qc.edu             Alexandra de Luise *
+faculty Dais Akiba
+student Jennifer Padilla
+student Marsha Reid **
+
+#name    Campus Environment Committee
+#chair   Frederick_Purnell@qc.edu        Fred Purnell
+#faculty David Locke
+#faculty Lila Swell
+#faculty Ronnie Gomez
+#student Tim Duffy
+
+name    Elections Committee
+chair   Manuel_Sanudo@qc.edu            Manuel Sanudo
+faculty Subash Gandhi
+student Maria Fernandes
+
+name    Graduate Curriculum Committee
+chair   Alice_Artzt@qc.edu              Alice Artzt
+faculty Jonathan Buchsbaum
+faculty Virgil Blake
+
+name    Graduate Scholastic Standards Committee
+chair   David_Richter@qc.edu            David Richter *
+faculty Karen P. Smith
+
+name    International Student Affairs Committee
+chair   Magnus_Bassey@qc.edu            Magnus Bassey
+faculty Lillian Moncada-Davidson
+faculty Magnus Bassey
+student Nadege Gilles
+student Francine Binns
+
+# name    Nominating Committee
+# chair   Shoshana@Qc1.Qc.Edu             Shoshana Kaufmann
+# faculty Marcia Bayne-Smith
+# faculty Michael Newmann
+# student Balbona Baci
+# student Carmelo Susino
+
+name    Policy Board on Administration
+chair   Philip_Ramsey@qc.edu            Philip Ramsey
+faculty Terrence Quinn
+
+name    Committee on Teaching Excellence & Evaluation
+chair   Hugh_English@qc.edu             Hugh English *
+faculty Evelyn O'Connor
+student Monique Schipani
+
+name    Undergraduate Curriculum Committee
+chair   Lord@cs.qc.edu                  Ken Lord *
+faculty Frank Warren
+student Itiel Katz **
+student Zeeshan Suhail **
+
+name    Undergraduate Scholastic Standards Committee
+chair   Doreen_Berman@qc.edu            Doreen Berman *
+chair   USSQC@qc1.qc.edu                Charles Lloyd
+faculty Drora Pershing
+student Joanne Mason
+student Moira Meehan **
+student Zulaikha Mogul
+
+name    Technology and Library Committee
+chair   Shelly_Warwick@qc.edu           Shelly Warwick
+faculty Christopher Vickery
+faculty Angela Love
+student Francine Binns
+student Patrick Yu
+

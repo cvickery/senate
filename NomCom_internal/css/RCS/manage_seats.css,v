@@ -1,0 +1,325 @@
+head	1.2;
+access;
+symbols;
+locks
+	vickery:1.2; strict;
+comment	@# @;
+
+
+1.2
+date	2009.11.09.06.12.52;	author vickery;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2009.11.01.05.02.10;	author vickery;	state Exp;
+branches;
+next	;
+
+
+desc
+@Stylesheet for the manage_seats.xhtml application.
+Checked in on the occasion of making the cursor a pointer when the user hovers
+over entries in the Seat Holder column, to let them feel better about clicking
+on something that doesn't look like a button.
+@
+
+
+1.2
+log
+@Updated to make this page look like the committee_seats
+page.
+All the cells in the Expiration Date column have a class
+so their width can be set to avoid line wraps in these
+cells.
+@
+text
+@/*  $Id: manage_seats.css,v 1.1 2009/11/01 05:02:10 vickery Exp vickery $
+ *
+ *  $Log: manage_seats.css,v $
+ *  Revision 1.1  2009/11/01 05:02:10  vickery
+ *  Initial revision
+ *
+ */
+
+html,body {
+  margin:0; padding:1em;
+  background-color:#eef;
+  font-family:Verdana, Geneva, sans-serif;
+  font-size:14px;
+  }
+pre {
+  font-size:0.8em;
+}
+
+.db_error {
+  color:red;
+  }
+#login-form, #login-form fieldset {
+  border:none;
+  margin:0;padding:0;
+}
+input[type='radio'] {
+  display:block;
+  float:left;
+  clear:both;
+}
+input[type='radio']+label {
+  display:block;
+  float:left;
+}
+#person-form {
+  position:fixed;
+  top:10px;
+  left:350px;
+  padding:1em;
+  visibility:hidden;
+  background-color:#ccc;
+  border:1px solid green;
+  width:250px;
+}
+#person-prompt-box {
+  position:relative;
+}
+#person-text {
+  width:100%;
+}
+#person-text+ul {
+  visibility:hidden;
+  list-style-type:none;
+  padding:0.1em;
+  margin:0;
+  position:absolute;
+  top:22px;left:250px;
+  width:250px;
+  background-color:white;
+  border:1px solid #666;
+}
+#person-text+ul li {
+  display:block;
+  border:1px solid #ccc;
+  background-color:#66e;
+  color:#eee;
+  padding-left:0.5em;
+}
+#person-text+ul li.faculty {
+  background-color:#9f9;
+  color:#333;
+}
+#cancel-submit {
+  padding:0.5em;
+}
+.current-choice {
+  font-weight:bold;
+}
+
+table {
+  width:981px;
+  margin:1em auto;
+  border-collapse:collapse;
+  background-color:#eef;
+}
+.expiration-date {
+  width:125px;
+}
+.faculty-table {
+  background-color:#efc;
+  padding:1em;
+}
+.student-table {
+  background-color:#cfe;
+  padding:1em;
+}
+span.faculty-table, span.student-table {
+  padding:0.25em;
+}
+span.faculty-table a, span.student-table a {
+  color:black;
+}
+span.faculty-table a:hover, span.student-table a:hover {
+  text-decoration:none;
+  color:#666;
+}
+caption {
+  padding: 0.75em; margin-bottom:0.25em;
+  font: bold 1.5em Verdana, Arial, Helvetica, sans-serif;
+  background-color:white;
+  border:1px solid black;
+  }
+.seats-table td {
+  border: 1px solid #999;
+  padding:0 0.5em;
+  }
+th[scope=row] {
+  padding:0.5em;
+  vertical-align:top;
+  text-align: left;
+  }
+td.expiring, p.expiring {
+  background-color:#faa;
+  }
+td.renewal-received, p.renewal-received {
+  background-color:#ffa;
+  }
+p.expiring, p.renewal-received, span.renewal-received {
+  width:50%;
+  padding:0.5em 1em;
+  border: 1px solid black;
+  }
+.seat-holder {
+  cursor:pointer;
+}
+.chair {
+  font-weight:bold;
+  }
+
+tbody {
+  border:3px solid black;
+}
+.type-heading {
+  padding:1em;
+  background-color:white;
+}
+.type-heading th {
+  padding: 0.5em 0 0.25em 0;
+}
+
+.even-numbered {
+  background-color:#def;
+}
+
+caption, form {
+  -moz-border-radius:5px;
+  -webkit-border-radius:5px;
+}
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 5
+a5 1
+/*  $Id$
+a6 1
+ *  $Log$
+d13 1
+d15 4
+d79 4
+a82 2
+.seats-table {
+  border:2px solid black;
+d84 24
+a107 3
+  margin:auto;
+  }
+.seats-table caption {
+a111 2
+  -moz-border-radius: 15px;
+  -webkit-border-radius: 15px;
+d114 1
+a114 1
+  border: 1px solid #999;;
+a115 1
+  background-color:white;
+d117 4
+a120 3
+.seats-table .seat-holder {
+  text-align:left;
+  cursor:pointer;
+d128 1
+a128 4
+td.renewal-not-needed, p.renewal-not-needed {
+  background-color:#aaf;
+  }
+p.expiring, p.renewal-received, p.renewal-not-needed, span.renewal-needed, span.renewal-received {
+a131 2
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+d133 3
+a135 1
+
+d140 5
+a144 25
+.faculty-table {
+  background-color:#6e6;
+  padding:1.5em;
+  }
+.student-table {
+  background-color:#66e;
+  padding:1.5em;
+  }
+span.faculty-table, span.student-table {
+  padding:0.5em;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  }
+span.faculty-table a {
+  color:black;
+  border: 1px solid #6e6;
+  padding:0.1em;
+  }
+span.student-table a {
+  color:black;
+  border: 1px solid #66e;
+  padding:0.1em;
+  }
+span.faculty-table a:hover, span.student-table a:hover {
+  border:1px solid black;
+d146 13
+a158 51
+  text-decoration:none;
+  }
+div.faculty-table {
+  border:2px solid #030;
+  margin:1em auto;
+  }
+div.student-table {
+  border:2px solid #003;
+  margin:1em auto;
+  }
+#committee-info-table {
+  border-collapse:collapse;
+  width:90%;
+  margin:auto;
+  }
+#committee-info-table td {
+  padding: 0 0.5em;
+  text-align:center;
+  border: 1px solid black;
+  }
+tr.start-committee {
+  border-top: 3px double black;
+  }
+th {
+  background-color:#eee;
+  }
+th[scope=row] {
+  padding:0.5em;
+  vertical-align:top;
+  text-align: left;
+  border: 1px solid black;
+  }
+#committee-info-table .seat-holder {
+  text-align: left;
+  }
+.seats-table tr.type-heading-row-1 {
+  border-top:3px solid black;
+  border-left:3px solid black;
+  border-right:3px solid black;
+  font:1.1em Verdana, Arial, Helvetica, sans-serif bold;
+  }
+.seats-table tr.type-heading-row-2 {
+  border-bottom:4px solid black;
+  border-left:3px solid black;
+  border-right:3px solid black;
+  font:1.0em Verdana, Arial, Helvetica, sans-serif bold;
+  }
+.type-heading-cell {
+  background-color:white;
+  padding-top:0.5em;
+  }
+@

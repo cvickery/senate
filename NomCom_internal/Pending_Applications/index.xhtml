@@ -1,0 +1,254 @@
+<?php
+//  $Id: index.xhtml,v 1.6 2010/01/16 19:29:36 vickery Exp vickery $
+/*    This was going to be an hierarchical browser that let you select a letter of the alphabet,
+ *    or a year and/or month, letting you select from the applications that meet those criteria.
+ *    It ended up just being a scrolling list of all applications ordered by reverse date or
+ *    alphabetically. But the arrays are set up for the hierarchical index version.
+ *
+ *    $Log: index.xhtml,v $
+ *    Revision 1.6  2010/01/16 19:29:36  vickery
+ *    Handle case where there are no applications in the current
+ *    directory; fixed misspelling error in initializing the
+ *    by_date array.
+ *
+ *    Revision 1.5  2010/01/16 18:13:08  vickery
+ *    Eliminated Search box: browsing is sufficient.
+ *    Added a heading to the browse division to tell which mode
+ *    (by name or by date) is currently in effect.
+ *
+ *    Revision 1.4  2010/01/16 05:27:53  vickery
+ *    Reworked this file so that it can be used in both the Old_Applications
+ *    and Pending_Applications directories. It figures out the page title, the
+ *    H2 for the page, and how to configure the nav list based on the current
+ *    directory name. It can be kept as one file linked to the other one, but
+ *    Dreamweaver doesn’t know how to do that, so on the server, they are
+ *    separate copies. But on the development system, there is just one file.
+ *
+ *    Revision 1.3  2010/01/15 06:25:27  vickery
+ *    Removed one browse-by button. Changed object with data attribute to a
+ *    div for displaying the applications, to accomodate IE and Webkit.
+ *    Minor changes so DOM matches what JavaScript needs.
+ */
+
+  session_start();
+  //  Verify the user is a member of the nominating committee or a db administrator;
+  //  redirect to login if not.
+  if ( !( (isset($_SESSION['IS_NOMINATING']) && $_SESSION['IS_NOMINATING']) ||
+          (isset($_SESSION['person']) && ($_SESSION['person']['is_db_admin'] === 't')) ) )
+  {
+    $_SESSION['login_error'] = "Not Authorized";
+    $_SESSION['requested_page'] = $_SERVER['REQUEST_URI'];
+    header("Location: ../scripts/do_logoff.php");
+    exit;
+  }
+
+  //  class Application
+  //  ---------------------------------------------------------------------------------------------
+  /*  Captures the information about an applicataion HTML file, which is named:
+   *  YYYY-MM-DD_First_Name_Lastname.html.
+   *  Includes a compare function so that arrays of applications can be sorted by date/name.
+   */
+  class Application
+  {
+    public  $url, $first_name, $last_name, $date, $year, $month, $month_name, $day;
+    public function __construct($url)
+    {
+      global $month_names;
+      preg_match("/^(.*?)_(.*)\.html$/", $url, $matches);
+      $names = explode('_', $matches[2]);
+      $this->last_name = array_pop($names);
+      $this->first_name = implode(' ', $names);
+      $this->date = $matches[1];
+      preg_match("/^(\d{4})-(\d{2})-(\d{2})$/", $this->date, $matches);
+      $this->year = $matches[1];
+      $this->month = $matches[2];
+      $this->month_name = $month_names[$this->month - 1];
+      $this->day = $matches[3];
+      $this->url = "<a href=\"{$url}\">{$this->last_name}, {$this->first_name}</a>";
+    }
+
+    public static function compare($arg1, $arg2)
+    {
+      if ($arg1->last_name < $arg2->last_name) return -1;
+      if ($arg1->last_name > $arg2->last_name) return +1;
+      if ($arg1->first_name < $arg2->first_name) return -1;
+      if ($arg1->first_name > $arg2->first_name) return +1;
+      if ($arg1->year < $arg2->year) return -1;
+      if ($arg1->year > $arg2->year) return +1;
+      if ($arg1->month < $arg2->month) return -1;
+      if ($arg1->month > $arg2->month) return +1;
+      if ($arg1->day < $arg2->day) return -1;
+      if ($arg1->day > $arg2->day) return +1;
+      return 0;
+    }
+  }
+
+  //  Create arrays of applications, ordered by name and date.
+  $by_date = array();
+  $month_names = array('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec');
+  $by_name = array();
+  $dir = opendir('.');
+  while ($file = readdir($dir))
+  {
+    if (preg_match("/^(\d{4})-(\d{2})-\d{2}.*_(.*)\.html$/", $file, $matches))
+    {
+      $application = new Application($file);
+      // by_date
+      $year_key = $application->year;
+      $month_key = $application->month;
+      if (!isset($by_date[$year_key])) $by_date[$year_key] = array();
+      if (!isset($by_date[$year_key][$month_key])) $by_date[$year_key][$month_key] = array();
+      $by_date[$year_key][$month_key][] = $application;
+
+      // by_name
+      $letter_key = substr(strtolower($application->last_name), 0, 1);
+      if (!isset($by_name[$letter_key])) $by_name[$letter_key] = array();
+      $by_name[$letter_key][] = $application;
+    }
+  }
+
+  /*  This index page lives in two different directories: Old_Applications and Pending_Applications.
+   *  Here, we determine which directory we are in so we can set up the page’s subtitle and nav
+   *  links appropriately.
+   */
+   $this_dir = basename(realpath("."));
+   $pending_class = $archive_class = '';
+   switch ($this_dir)
+   {
+    case 'Pending_Applications':
+    {
+      $subtitle = "Pending Applications";
+      $pending_class = " class='current-page'";
+      break;
+    }
+    case 'Old_Applications':
+    {
+      $subtitle = "Application Archive";
+      $archive_class = " class='current-page'";
+      break;
+    }
+    default:
+    {
+      echo "Not in proper directory: $this_dir";
+      exit;
+    }
+  }
+
+  //  Web Page Begins Here: deliver proper MIME type
+  //  ----------------------------------------------------------------------------------------------
+  if (array_key_exists("HTTP_ACCEPT", $_SERVER) &&
+      stristr($_SERVER["HTTP_ACCEPT"], "application/xhtml+xml"))
+  {
+    $mime_type = 'application/xhtml+xml';
+    header("Content-type: $mime_type");
+    print("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+  }
+  else
+  {
+    $mime_type = 'text/html';
+    header("Content-type: $mime_type; charset=utf-8");
+  }
+ ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+  "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+  <head>
+    <title><?php echo $subtitle; ?></title>
+    <link rel="shortcut icon" href="../../images/AS.ico" />
+    <link rel="stylesheet" type="text/css" href="../css/nomcom-internal.css" />
+    <link rel="stylesheet" type="text/css" href="../css/application-archive.css" />
+    <script type="text/javascript" src="../scripts/core.js"></script>
+    <script type="text/javascript" src="../scripts/application-archive.js"></script>
+    <meta http-equiv="Content-Type" content="<?php echo $mime_type; ?>; charset=UTF-8" />
+  </head>
+
+  <body>
+    <div id="header">
+      <img src="../images/AS_Gavel.png" alt="" />
+      <h1>Nominating Committee</h1>
+      <h2><?php echo $subtitle; ?></h2>
+    </div>
+    <ul id="nav-list">
+      <li><a href="../../NomCom/index.xhtml">Public Site</a></li>
+      <li><a href="../index.xhtml">Internal Site</a></li>
+      <?php
+      if (isset($_SESSION['person']) && $_SESSION['person']['is_db_admin'] === 't')
+      {
+        echo <<<EOT
+      <li><a href="../manage_people.xhtml">Manage People</a></li>
+      <li><a href="../manage_seats.xhtml">Manage Seats</a></li>
+      <li><a href="../rollover_seats.xhtml">Rollover Seats</a></li>
+EOT;
+      }
+      ?>
+      <li<?php echo "$pending_class"; ?>>
+        <a href="../Pending_Applications">Pending Applications</a>
+      </li>
+      <li<?php echo "$archive_class"; ?>>
+        <a href="../Old_Applications">Application Archive</a>
+      </li>
+    </ul>
+    <div id="content">
+      <div id="application">
+        <p id="application-prompt">
+        <?php
+          if (count($by_date) > 0)
+          {
+            echo "&#x21D0; Select an application.";
+          }
+          else
+          {
+            echo "There are no applications available.";
+          }
+         ?>
+        </p>
+      </div>
+      <div id="browser">
+        <div id="browse-type">
+          <h2>Browse By Date</h2>
+          <button id="browse-by-button">Switch to Browse By Name</button>
+        </div>
+        <div id="browse-by-name">
+        <?php
+          $letters = array_keys($by_name);
+          sort($letters);
+          echo "<ul class='application-list'>\n";
+          foreach ($letters as $letter)
+          {
+            usort($by_name[$letter], "Application::compare");
+            $num = count($by_name[$letter]);
+            foreach ($by_name[$letter] as $application)
+            {
+              echo "  <li class='application-item'><span>{$application->date}</span>"
+                 . "<span>{$application->url}</span></li>\n";
+            }
+          }
+          echo "</ul>\n";
+         ?>
+        </div>
+        <div id="browse-by-date">
+        <?php
+          $years = array_keys($by_date);
+          rsort($years);
+          echo "<ul class='application-list'>\n";
+          foreach ($years as $year)
+          {
+            $months = array_keys($by_date[$year]);
+            rsort($months);
+            foreach ($months as $month)
+            {
+              rsort($by_date[$year][$month]);
+              foreach($by_date[$year][$month] as $application)
+              {
+                echo "  <li class='application-item'><span>{$application->date}</span>"
+                   . "<span>{$application->url}</span></li>\n";
+              }
+            }
+          }
+          echo "</ul>\n";
+         ?>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

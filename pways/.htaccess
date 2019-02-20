@@ -1,0 +1,6 @@
+# You have to include the RewriteEngine directive
+# Second line has to be !=on with no space after =
+# 
+RewriteEngine on
+RewriteCond %{HTTPS} !=on
+RewriteRule ^.*$ https://%{SERVER_NAME}%{REQUEST_URI} [R,L]

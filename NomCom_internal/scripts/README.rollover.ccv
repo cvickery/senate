@@ -1,0 +1,16 @@
+
+Rollover
+
+  Creates a new set of seats when old terms expire. Copy users from expired seat if renewal_received.
+  Mark new seats active and old seats not.
+
+  1. Find the seats and set appropriate renewal_received fields to true using pgsql
+      BEGIN;
+      UPDATE seats 
+        SET renewal_received = true 
+        WHERE expiration_date > '2009-04-30'::date AND expiration_date < '2009-06-01'::date;
+      -- Check the proper number of rows were updated, then ... COMMIT; or ROLLBACK;
+
+  2. Run rollover.php from the command line.
+      ./rollover.php expiration_date election_date
+

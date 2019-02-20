@@ -1,0 +1,30 @@
+
+html {
+	margin:0; padding:0;
+	background-color:#ccc;
+	color:black;
+}
+
+body {
+  font-family:sans-serif;
+  color:#c60;
+  background-color:#ffc;
+  max-width:900px;
+  margin:1em auto;
+	padding:1em;
+	border-radius:0.5em;
+	box-shadow:#666 0.25em 0.25em 0.25em;
+}
+h1 {
+  color:white;
+  text-align:center;
+  -moz-text-shadow:#441 0.1em 0.1em 0.15em;
+  -webkit-text-shadow:#441 0.1em 0.1em 0.15em;
+  text-shadow:#441 0.1em 0.1em 0.15em;
+  font-size:2em;
+}
+
+fieldset {margin:1em auto; width:50%;}
+legend { padding:0.5em; font-size:0.9em; font-variant:small-caps;}
+.error  { color:red;  }
+.action { color:blue; font:monospace;}

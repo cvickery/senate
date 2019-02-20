@@ -1,0 +1,462 @@
+head	1.3;
+access;
+symbols;
+locks
+	vickery:1.3; strict;
+comment	@# @;
+
+
+1.3
+date	2010.01.16.18.29.01;	author vickery;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2010.01.15.06.12.57;	author vickery;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2010.01.14.06.14.16;	author vickery;	state Exp;
+branches;
+next	;
+
+
+desc
+@Manage the user interface of the application archive browser so it
+is easy to scroll using either the mouse or keyboard.
+Highlights the currently selected item in the lists.
+Controls which list is visible by responding to button clicks.
+@
+
+
+1.3
+log
+@Keyboard browsing seems to work across platforms now: keyup listener for
+the document.documentElement element was suggested by someone in a JQuery
+blog who was trying to accomplish the same thing.
+Fixed up some missing focus() calls and switched browsing mode heading
+text when browsing mode switches.
+Deleted some comments left over from development process.
+@
+text
+@// $Id: application-archive.js,v 1.2 2010/01/15 06:12:57 vickery Exp vickery $
+/*  Browse the archive of appliations by name or date.
+ *
+ *    $Log: application-archive.js,v $
+ *    Revision 1.2  2010/01/15 06:12:57  vickery
+ *    Switched from using an object with data attribute to a div with
+ *    AJAX/innerHTML to display the applications to accommodate IE and
+ *    Webkit.
+ *    Considerable code cleanup and refactoring, but keyboard navigation
+ *    is still not working.
+ *
+ *    Revision 1.1  2010/01/14 06:14:16  vickery
+ *    Initial revision
+ *
+ */
+if (typeof Core !== 'object')
+{
+  alert ("Core Library missing.");
+}
+else
+{
+  Core.start(
+  (function()
+    {
+      //  Global Variables
+      //  ----------------------------------------------------------------------------------------
+      var searchText          = null;
+      var applicationPanel    = null;
+      var selectedNameElement = null;
+      var selectedDateElement = null;
+      var browsingByDate      = null;
+      var date_links          = null;
+      var name_links          = null;
+
+      var requestObject       = null;
+
+      //  newRequestObject()
+      //  -----------------------------------------------------------------------------------------
+      /*  Creates a new requestObject, if possible.
+       */
+        function newRequestObject()
+        {
+          try
+          {
+            requestObject = new XMLHttpRequest();
+          }
+          catch (error)
+          {
+            requestObject = new ActiveXObject('Microsoft.XMLHTTP');
+          }
+        }
+
+      //  requestHandler()
+      //  -----------------------------------------------------------------------------------------
+      /*  Handles loading applications into the application element.
+       */
+        function requestHandler()
+        {
+          if (requestObject.readyState === 4)
+          {
+            var inner = /<body>(.*)<\/body>/.exec(requestObject.responseText.replace(/\n/g, ' '))[1];
+            applicationPanel.innerHTML = inner;
+          }
+        }
+      //  clickListener()
+      //  -----------------------------------------------------------------------------------------
+      /*  Load the selected application when the link is clicked.
+       */
+        function clickListener(evt)
+        {
+          evt = evt ? evt : window.event;
+          if (browsingByDate)
+          {
+            Core.removeClass(date_links[selectedDateElement.index].parentNode, 'selected');
+            selectedDateElement = this;
+            selectedDateElement.focus();
+            Core.addClass(date_links[selectedDateElement.index].parentNode, 'selected');
+          }
+          else
+          {
+            Core.removeClass(name_links[selectedNameElement.index].parentNode, 'selected');
+            selectedNameElement = this;
+            selectedNameElement.focus();
+            Core.addClass(name_links[selectedNameElement.index].parentNode, 'selected');
+          }
+          newRequestObject();
+          requestObject.onreadystatechange = requestHandler;
+          requestObject.open('GET', this.href, true);
+          requestObject.send(null);
+          Core.preventDefault(evt);
+        }
+
+      //  keyupListener()
+      //  -----------------------------------------------------------------------------------------
+      /*    Arrow keys move up and down the current browsing list.
+       */
+        function keyupListener(evt)
+        {
+          evt = evt ? evt : window.event;
+          switch (evt.keyCode)
+          {
+            case 13:  // CR
+            {
+              var href = (browsingByDate) ? selectedDateElement.href : selectedNameElement.href;
+              newRequestObject();
+              requestObject.onreadystatechange = requestHandler;
+              requestObject.open('GET', href, true);
+              requestObject.send(null);
+              break;
+            }
+
+            case 38:  // Up
+            {
+              if (browsingByDate)
+              {
+                if ( selectedDateElement.index > 0)
+                {
+                  Core.removeClass(selectedDateElement.parentNode, 'selected');
+                  selectedDateElement = date_links[selectedDateElement.index - 1];
+                  Core.addClass(selectedDateElement.parentNode, 'selected');
+                  selectedDateElement.scrollIntoView();
+                  selectedDateElement.focus();
+                }
+              }
+              else
+              {
+                if ( selectedNameElement.index > 0)
+                {
+                  Core.removeClass(selectedNameElement.parentNode, 'selected');
+                  selectedNameElement = name_links[selectedNameElement.index -1];
+                  Core.addClass(selectedNameElement.parentNode, 'selected');
+                  selectedNameElement.scrollIntoView();
+                  selectedNameElement.focus();
+                }
+              }
+              Core.preventDefault(evt);
+              break;
+            }
+
+            case 40:  // Dn
+            {
+              if (browsingByDate)
+              {
+                if ( selectedDateElement.index < date_links.length - 1)
+                {
+                  Core.removeClass(selectedDateElement.parentNode, 'selected');
+                  selectedDateElement = date_links[selectedDateElement.index + 1];
+                  Core.addClass(selectedDateElement.parentNode, 'selected');
+                  selectedDateElement.scrollIntoView();
+                  selectedDateElement.focus();
+                }
+              }
+              else
+              {
+                if ( selectedNameElement.index < name_links.length - 1)
+                {
+                  Core.removeClass(selectedNameElement.parentNode, 'selected');
+                  selectedNameElement = name_links[selectedNameElement.index + 1];
+                  Core.addClass(selectedNameElement.parentNode, 'selected');
+                  selectedNameElement.scrollIntoView();
+                  selectedNameElement.focus();
+                }
+              }
+              Core.preventDefault(evt);
+              break;
+            }
+
+            default:
+            {
+              break;
+            }
+          }
+        }
+      //  return {init: function() ...};
+      //  -----------------------------------------------------------------------------------------
+      return {
+        init: function()
+        {
+          var windowHeight = document.documentElement.clientHeight || document.body.clientHeight;
+          var contentDiv = document.getElementById('content');
+          /*  Resize the content div, the application panel, and the two browsing divs to        *
+           *  fill the space available on the user’s screen.                                     *
+           *    offsetHeight: total width of an element including scrollbars and borders         *
+           *    clientHeight: CSS width + padding                                                */
+          var padding = 32; // 2 × 1em assuming font-size is 16px
+          var extra = contentDiv.offsetHeight - contentDiv.clientHeight + padding;
+          contentDiv.style.height = (windowHeight - contentDiv.offsetTop - extra) + 'px';
+          applicationPanel = document.getElementById('application');
+          applicationPanel.style.height = (contentDiv.offsetHeight - extra) + 'px';
+          var browseByDateDiv     = document.getElementById('browse-by-date');
+          var browseByNameDiv     = document.getElementById('browse-by-name');
+
+          browseByNameDiv.style.height = browseByDateDiv.style.height = (contentDiv.offsetHeight -  extra -
+              46) + "px";
+          browseByDateDiv.style.display = browseByNameDiv.style.display = 'none';
+          var browseByButton  = document.getElementById('browse-by-button');
+          var browseByHeading = browseByButton.parentNode.getElementsByTagName('h2')[0];
+          Core.addEventListener(browseByButton, 'click', function()
+              {
+                if (browsingByDate)
+                {
+                  browseByDateDiv.style.display = 'none';
+                  browseByNameDiv.style.display = 'block';
+                  browsingByDate                = false;
+                  browseByHeading.firstChild.nodeValue = 'Browse By Name';
+                  browseByButton.firstChild.nodeValue = 'Switch to browse by date';
+                  selectedNameElement.focus();
+                }
+                else
+                {
+                  browseByDateDiv.style.display = 'block';
+                  browseByNameDiv.style.display = 'none';
+                  browsingByDate                = true;
+                  browseByHeading.firstChild.nodeValue = 'Browse By Date';
+                  browseByButton.firstChild.nodeValue = 'Switch to browse by name';
+                  selectedDateElement.focus();
+                }
+              });
+
+          name_links = browseByNameDiv.getElementsByTagName('a');
+          for (var i = 0; i < name_links.length; i++)
+          {
+            name_links[i].index = i;
+            Core.addEventListener(name_links[i], 'click', clickListener);
+          }
+          selectedNameElement = name_links[0];
+          Core.addClass(selectedNameElement.parentNode, 'selected');
+
+          date_links = browseByDateDiv.getElementsByTagName('a');
+          for (var i = 0; i < date_links.length; i++)
+          {
+            date_links[i].index = i;
+            Core.addEventListener(date_links[i], 'click', clickListener);
+          }
+          selectedDateElement = date_links[0];
+          Core.addClass(selectedDateElement.parentNode, 'selected');
+
+          //  Using document.documentElement was suggested by a jquery blog entry.
+          //  And it seems to work across browsers.
+          Core.addEventListener(document.documentElement, 'keyup', keyupListener);
+
+          //  Initial setup: browse by date
+          browseByDateDiv.style.display = 'block';
+          browseByNameDiv.style.display = 'none';
+          browsingByDate                = true;
+          browseByButton.nodeValue      = 'Switch to browse by name';
+          selectedDateElement.focus();
+        }
+      };
+    })()
+  );
+}
+@
+
+
+1.2
+log
+@Switched from using an object with data attribute to a div with
+AJAX/innerHTML to display the applications to accommodate IE and
+Webkit.
+Considerable code cleanup and refactoring, but keyboard navigation
+is still not working.
+@
+text
+@d1 1
+a1 1
+// $Id: application-archive.js,v 1.1 2010/01/14 06:14:16 vickery Exp vickery $
+d4 7
+a10 3
+ *  TODO: We have arrow key bugs: Safari seems to prefer keyup, but Firefox
+ *        seems to ignore arrow keys unless you use keypress, and it loads
+ *        the first application after loading the one you want using Enter.
+a11 1
+ *    $Log: application-archive.js,v $
+d76 1
+d83 1
+a99 1
+//alert('keyCode: ' + evt.keyCode);
+d150 1
+d161 1
+d197 1
+d205 1
+d214 1
+d238 3
+a240 2
+          Core.addEventListener(browseByDateDiv, 'keyup', keyupListener);
+          Core.addEventListener(browseByNameDiv, 'keyup', keyupListener);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+// $Id$
+a2 2
+ *  TODO: Tab to the application so you can scroll it when
+ *  tab key is pressed in the browse pane.
+d4 8
+a11 1
+ *    $Log$
+a25 1
+      var selectedNameIndex   = 0;
+a26 1
+      var selectedDateIndex   = 0;
+d28 1
+a28 1
+      var currentlyBrowsingBy = 'none';
+d32 30
+d69 16
+a84 1
+          applicationPanel.data = this.href;
+d88 1
+a88 1
+      //  keypressListener()
+d92 1
+a92 1
+        function keypressListener(evt)
+d95 1
+d99 6
+a104 10
+              if (currentlyBrowsingBy === 'name')
+              {
+                applicationPanel.data = selectedNameElement.href;
+                Core.preventDefault(evt);
+              }
+              if (currentlyBrowsingBy === 'date')
+              {
+                applicationPanel.data = selectedDateElement.href;
+                Core.preventDefault(evt);
+              }
+d106 1
+d109 2
+a110 1
+              if (currentlyBrowsingBy === 'name')
+d112 1
+a112 1
+                if ( selectedNameIndex > 0)
+d114 5
+a118 4
+                  Core.removeClass(name_links[selectedNameIndex--].parentNode, 'selected');
+                  Core.addClass(name_links[selectedNameIndex].parentNode, 'selected');
+                  selectedNameElement = name_links[selectedNameIndex];
+                  name_links[selectedNameIndex].parentNode.scrollIntoView();
+d121 1
+a121 1
+              if (currentlyBrowsingBy === 'date')
+d123 1
+a123 1
+                if ( selectedDateIndex > 0)
+d125 5
+a129 4
+                  Core.removeClass(date_links[selectedDateIndex--].parentNode, 'selected');
+                  Core.addClass(date_links[selectedDateIndex].parentNode, 'selected');
+                  selectedDateElement = date_links[selectedDateIndex];
+                  date_links[selectedDateIndex].parentNode.scrollIntoView();
+d134 1
+d137 2
+a138 1
+              if (currentlyBrowsingBy === 'name')
+d140 1
+a140 1
+                if ( selectedNameIndex < name_links.length - 1)
+d142 4
+a145 4
+                  Core.removeClass(name_links[selectedNameIndex++].parentNode, 'selected');
+                  Core.addClass(name_links[selectedNameIndex].parentNode, 'selected');
+                  selectedNameElement = name_links[selectedNameIndex];
+                  name_links[selectedNameIndex].parentNode.scrollIntoView();
+d148 1
+a148 1
+              if (currentlyBrowsingBy === 'date')
+d150 1
+a150 1
+                if ( selectedDateIndex < date_links.length - 1)
+d152 4
+a155 4
+                  Core.removeClass(date_links[selectedDateIndex++].parentNode, 'selected');
+                  Core.addClass(date_links[selectedDateIndex].parentNode, 'selected');
+                  selectedDateElement = date_links[selectedDateIndex];
+                  date_links[selectedDateIndex].parentNode.scrollIntoView();
+d160 1
+d163 1
+d165 1
+d190 2
+a191 4
+          var browseByDateButton  = document.getElementById('browse-by-date-button');
+          browseByDateButton.focus();
+          var browseByNameButton  = document.getElementById('browse-by-name-button');
+          Core.addEventListener(browseByDateButton, 'click', function()
+d193 16
+a208 9
+                browseByDateDiv.style.display = 'block';
+                browseByNameDiv.style.display = 'none';
+                currentlyBrowsingBy           = 'date';
+              });
+          Core.addEventListener(browseByNameButton, 'click', function()
+              {
+                browseByDateDiv.style.display = 'none';
+                browseByNameDiv.style.display = 'block';
+                currentlyBrowsingBy           = 'name';
+a211 3
+          selectedNameElement = name_links[0];
+          selectedNameIndex   = 0;
+          Core.addClass(selectedNameElement.parentNode, 'selected');
+d214 1
+d217 3
+a220 2
+          selectedDateElement = date_links[0];
+          Core.addClass(selectedDateElement.parentNode, 'selected');
+d223 1
+d226 5
+d232 6
+a237 2
+          var body = document.getElementsByTagName('body')[0];
+          Core.addEventListener(body, 'keypress', keypressListener);
+@

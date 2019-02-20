@@ -1,0 +1,304 @@
+<?php
+  //  $Id: manage_people.xhtml,v 1.2 2010/01/08 04:02:10 vickery Exp vickery $
+  /*
+   *  The GUI for a JavaScript people editor.
+   *
+   *    $Log: manage_people.xhtml,v $
+   *    Revision 1.2  2010/01/08 04:02:10  vickery
+   *    Update requested_page session variable so user will come back here after
+   *    a successful login.
+   *
+   *    Revision 1.1  2009/12/29 05:31:03  vickery
+   *    Initial revision
+   *
+   */
+  session_start();
+  //  Force HTTPS connection if not already in place.
+  if (! isset($_SERVER['HTTPS']))
+  {
+    header("Location: https://{$_SERVER['SERVER_NAME']}{$_SERVER['REQUEST_URI']}");
+    exit;
+  }
+  //  Verify the user is_db_admin
+  if (! isset($_SESSION['person']) || ($_SESSION['person']['is_db_admin'] !== 't'))
+  {
+    $_SESSION['login_error'] = "Not Authorized";
+    $_SESSION['requested_page'] = $_SERVER['REQUEST_URI'];
+    header("Location: scripts/do_logoff.php");
+    exit;
+  }
+  require_once('scripts/credentials.php');
+  require_once('scripts/get_division_info.php');
+  unset($_SESSION['requested_page']);
+
+  header("Vary: Accept");
+  if (  array_key_exists("HTTP_ACCEPT", $_SERVER) &&
+        stristr($_SERVER["HTTP_ACCEPT"], "application/xhtml+xml") ||
+        stristr($_SERVER["HTTP_USER_AGENT"], "W3C_Validator")
+      )
+  {
+    header("Content-type: application/xhtml+xml");
+    header("Last-Modified: "
+                    .gmdate('r',filemtime($_SERVER['SCRIPT_FILENAME'])));
+    print("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+  }
+  else
+  {
+    header("Content-type: text/html; charset=utf-8");
+  }
+ ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+  "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+  <head>
+    <title>Manage People</title>
+    <link rel="stylesheet"
+          type="text/css"
+          media="all"
+          href="css/manage_people.css" />
+
+    <script type="text/javascript" src="scripts/core.js"></script>
+    <script type="text/javascript" src="scripts/json2.js"></script>
+    <script type="text/javascript" src="scripts/manage_people.js"></script>
+  </head>
+
+  <body>
+    <h1>Senate Committees &mdash; Manage People</h1>
+    <form action="" method="post" id="search-form">
+      <fieldset>
+      <legend>Search</legend>
+        <p class="prompt"><span>Include in search:</span></p>
+        <div class="checkboxes">
+          <div class="checkboxCell">
+            <input type="checkbox" class="search-checkbox" id="searchFacultyBox" />
+            <label for="searchFacultyBox">Faculty</label>
+          </div>
+          <div class="checkboxCell">
+            <input type="checkbox" class="search-checkbox" id="searchNoninstructionalFacultyBox" />
+            <label for="searchNoninstructionalFacultyBox">Non-instructional Faculty</label>
+          </div>
+          <div class="checkboxCell">
+            <input type="checkbox" class="search-checkbox" id="searchUndergraduateBox" />
+            <label for="searchUndergraduateBox">Undergraduate</label>
+          </div>
+          <div class="checkboxCell">
+            <input type="checkbox" class="search-checkbox" id="searchGraduateBox" />
+            <label for="searchGraduateBox">Graduate</label>
+          </div>
+          <div class="checkboxCell">
+            <input type="checkbox" class="search-checkbox" id="searchEveningBox" />
+            <label for="searchEveningBox">Evening</label>
+          </div>
+          <div class="checkboxCell">
+            <input type="checkbox" class="search-checkbox" id="searchForeignBox" />
+            <label for="searchGraduateBox">Foreign</label>
+          </div>
+        </div>
+      <p class="prompt"><span>Search for:</span></p>
+      <input type="text" id="search-text" size="40" />
+    </fieldset>
+    </form>
+    <table id="results-table">
+      <thead>
+        <tr>
+          <th>id</th>
+          <th>Name</th>
+          <th>Status</th>
+          <th>QC Email</th>
+          <th>Alt Email</th>
+          <th>Phone</th>
+          <th>Address</th>
+        </tr>
+      </thead>
+      <tbody><tr><td>If you can see this, there is something wrong.</td></tr></tbody>
+    </table>
+    <div id="message-div">
+      <p>
+        If you can see this, there is something wrong.
+      </p>
+    </div>
+    <form action="" method="post" id="edit-form">
+    <p id="person-id-msg">New person selected for editing.</p>
+    <p id="num-undo-msg">There are no edits you can undo.</p>
+    <fieldset>
+      <legend>Edit</legend>
+        <div class="checkboxes">
+          <div class="checkboxCell">
+            <input type="checkbox" class="edit-checkbox" id="editFacultyBox" />
+            <label for="editFacultyBox">Faculty</label>
+          </div>
+          <div class="checkboxCell">
+            <input type="checkbox" class="edit-checkbox" id="editInstructionalBox" />
+            <label for="editInstructionalBox">Instructional</label>
+          </div>
+          <div class="checkboxCell">
+            <input type="checkbox" class="edit-checkbox" id="editUndergraduateBox" />
+            <label for="editUndergraduateBox">Undergraduate</label>
+          </div>
+          <div class="checkboxCell">
+            <input type="checkbox" class="edit-checkbox" id="editGraduateBox" />
+            <label for="editGraduateBox">Graduate</label>
+          </div>
+          <div class="checkboxCell">
+            <input type="checkbox" class="edit-checkbox" id="editEveningBox" />
+            <label for="editEveningBox">Evening</label>
+          </div>
+          <div class="checkboxCell">
+            <input type="checkbox" class="edit-checkbox" id="editForeignBox" />
+            <label for="editForeignBox">Foreign</label>
+          </div>
+        </div>
+        <fieldset id="editContactInfo">
+        <legend>Contact Information</legend>
+          <div>
+            <label for="editFirstNameText">First Name:</label>
+            <input type="text" id="editFirstNameText" />
+          </div>
+          <div>
+            <label for="editLastNameText">Last Name:</label>
+            <input type="text" id="editLastNameText" />
+          </div>
+          <div>
+            <label for="editQCEmailText">QC Email:</label>
+            <input type="text" id="editQCEmailText" />
+          </div>
+          <div>
+            <label for="editAlternateEmailText"> Alternate Email:</label>
+            <input type="text" id="editAlternateEmailText" />
+          </div>
+          <div>
+            <label for="editCellPhoneText">Cell Phone:</label>
+            <input type="text" id="editCellPhoneText" />
+          </div>
+          <div>
+            <label for="editWorkPhoneText">Work Phone:</label>
+            <input type="text" id="editWorkPhoneText" />
+          </div>
+          <div>
+            <label for="editHomePhoneText">Home Phone:</label>
+            <input type="text" id="editHomePhoneText" />
+          </div>
+          <div>
+            <label for="editWorkAddressText">Work Address:</label>
+            <input type="text" id="editWorkAddressText" />
+          </div>
+          <div>
+            <label for="editHomeAddressText">Home Address:</label>
+            <input type="text" id="editHomeAddressText" />
+          </div>
+        </fieldset>
+        <fieldset id="editStudent-SpecificInfo">
+        <legend>Student-Specific Information</legend>
+          <div>
+            <label for="editStudentIdText">Student Id#:</label>
+            <input type="text" id="editStudentIdText" />
+          </div>
+          <div>
+            <label for="editStudentVerifiedText">Student GPA verified:</label>
+            <input type="text" id="editStudentVerifiedText" />
+          </div>
+        </fieldset>
+        <fieldset>
+        <legend>Department or Major</legend>
+        <div>
+          <label for="editFacultyDepartmentSelect">Faculty Department:</label>
+          <select id="editFacultyDepartmentSelect">
+            <option>Select Department</option>
+          <?php
+            $currDivision = '';
+            foreach ($departments as $dept)
+            {
+              if ($currDivision != $dept['divAbbr'])
+              {
+                if ($currDivision != '')
+                {
+                  echo "</optgroup>\n";
+                }
+                echo "<optgroup id=\"" . strtolower($dept['divAbbr']) . "DeptGroup\" label=\"" . $dept['divName'] . "\">\n";
+                $currDivision = $dept['divAbbr'];
+              }
+              echo "  <option value=\"" .$dept['deptId']. "\">".$dept['deptName']."</option>\n";
+            }
+            echo "</optgroup>\n";
+          ?>
+          </select>
+        </div>
+        <div>
+          <label for="editFirstUndergraduateMajorSelect">Undergraduate Major:</label>
+          <select id="editFirstUndergraduateMajorSelect">
+            <option>Select Undergraduate Major</option>
+          <?php
+            $currDivision = '';
+            foreach ($undergraduate_majors as $major)
+            {
+              if ($currDivision != $major['divAbbr'])
+              {
+                if ($currDivision != '')
+                {
+                  echo "</optgroup>\n";
+                }
+                echo "<optgroup id=\"" . strtolower($major['divAbbr']) . "FirstUnderGroup\" label=\"" . $major['divName'] . "\">\n";
+                $currDivision = $major['divAbbr'];
+              }
+              echo "  <option value=\"" .$major['majorId']. "\">".$major['majorName']."</option>\n";
+            }
+            echo "</optgroup>\n";
+          ?>
+          </select>
+        </div>
+        <div>
+          <label for="editSecondUndergraduateMajorSelect">Undergraduate Major:</label>
+          <select id="editSecondUndergraduateMajorSelect">
+            <option>Second Undergraduate Major (if any)</option>
+          <?php
+            $currDivision = '';
+            foreach ($undergraduate_majors as $major)
+            {
+              if ($currDivision != $major['divAbbr'])
+              {
+                if ($currDivision != '')
+                {
+                  echo "</optgroup>\n";
+                }
+                echo "<optgroup id=\"" . strtolower($major['divAbbr']) . "SecondUnderGroup\" label=\"" . $major['divName'] . "\">\n";
+                $currDivision = $major['divAbbr'];
+              }
+              echo "  <option value=\"" .$major['majorId']. "\">".$major['majorName']."</option>\n";
+            }
+            echo "</optgroup>\n";
+          ?>
+          </select>
+        </div>
+        <div>
+          <label for="editGraduateMajorSelect">Graduate Major:</label>
+          <select id="editGraduateMajorSelect">
+            <option>Select Graduate Major</option>
+          <?php
+            $currDivision = '';
+            foreach ($graduate_majors as $major)
+            {
+              if ($currDivision != $major['divAbbr'])
+              {
+                if ($currDivision != '')
+                {
+                  echo "</optgroup>\n";
+                }
+                echo "<optgroup id=\"" . strtolower($major['divAbbr']) . "GradGroup\" label=\"" . $major['divName'] . "\">\n";
+                $currDivision = $major['divAbbr'];
+              }
+              echo "  <option value=\"" .$major['majorId']. "\">" .$major['majorName']. "</option>\n";
+            }
+            echo "</optgroup>\n";
+          ?>
+          </select>
+        </div>
+        </fieldset>
+        <div id="actionButtons">
+          <button id="editCommitButton">Commit</button>
+          <button id="editCancelButton">Cancel</button>
+        </div>
+      </fieldset>
+    </form>
+  </body>
+</html>

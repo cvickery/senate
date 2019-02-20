@@ -1,0 +1,939 @@
+head	1.9;
+access;
+symbols;
+locks
+	vickery:1.9; strict;
+comment	@# @;
+
+
+1.9
+date	2010.08.30.05.35.20;	author vickery;	state Exp;
+branches;
+next	1.8;
+
+1.8
+date	2010.01.09.22.54.18;	author vickery;	state Exp;
+branches;
+next	1.7;
+
+1.7
+date	2010.01.08.06.12.02;	author vickery;	state Exp;
+branches;
+next	1.6;
+
+1.6
+date	2009.12.31.05.14.28;	author vickery;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	2009.12.29.05.24.26;	author vickery;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2009.11.09.06.17.20;	author vickery;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2009.11.08.04.14.53;	author vickery;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2009.11.02.00.40.06;	author vickery;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2009.11.01.04.47.46;	author vickery;	state Exp;
+branches;
+next	;
+
+
+desc
+@Generates table rows for the manage_seats.xhtml application.
+@
+
+
+1.9
+log
+@Added support for resignation of either the regular or pro-tem
+seat holder when a seat has a pro-tem seat holder.
+@
+text
+@<?php
+//  $Id: manage_seats.php,v 1.8 2010/01/09 22:54:18 vickery Exp vickery $
+
+/*  This module creates arrays of CommitteeSeat objects, one for
+ *  students and one for faculty. All seats on all committees are
+ *  included. Two functions iterate over these arrays and generate table
+ *  rows with info about the seats. Classes are added to the data cells
+ *  for the seat holder where the holder is the chair and/or the seat is
+ *  expiring this year. Seats are listed in committee id order, which is
+ *  presumably alphabetical. On the assumption that OPEN seats have a
+ *  people.id of 1, open seats are listed after seats held by people.
+ *
+ *  C. Vickery
+ *  October 2008
+ *
+ *    $Log: manage_seats.php,v $
+ *    Revision 1.8  2010/01/09 22:54:18  vickery
+ *    Handle expired pro tempore seat holders (do not display them).
+ *
+ *    Revision 1.7  2010/01/08 06:12:02  vickery
+ *    Remove chair status and update committees table when the
+ *    chair of a committee vacates a seat.
+ *
+ *    Revision 1.6  2009/12/31 05:14:28  vickery
+ *    Bug fix: latest renewal was not being reported correctly.
+ *
+ *    Revision 1.5  2009/12/29 05:24:26  vickery
+ *    Whitespace and bug fixes.
+ *    Restrict administrative access to administrators.
+ *
+ *    Revision 1.4  2009/11/09 06:17:20  vickery
+ *    Numerous changes accompanying the change to make this
+ *    application look like committee_seats. Added the
+ *    expiration-date class value to cells in that column.
+ *
+ *    Revision 1.3  2009/11/08 04:14:53  vickery
+ *    Removed all references to the renewal_not_required column of the seats
+ *    table in the senate database ... because the column was deleted from
+ *    the table.
+ *
+ *    Revision 1.2  2009/11/02 00:40:06  vickery
+ *    Updated title string for seats to show date of vacancy as well
+ *    as election or pro tem info.
+ *
+ *    Revision 1.1  2009/11/01 04:47:46  vickery
+ *    Initial revision
+ *
+ */
+
+//  class HTML_Attribute
+//  ------------------------------------------------------------------------------------------------------------------------------
+/*  Lets you add words to a string only if they are not already there.
+ */
+class HTML_Attribute
+{
+  private $values;
+  private $name;
+  public function __construct($name)
+  {
+    $this->name = $name;
+    $this->values = '';
+  }
+  public function addValue($value)
+  {
+    if ($this->values === '')
+    {
+      $this->values = $value;
+      return;
+    }
+    if (preg_match("/".$value."/",$this->values)) return;
+      $this->values .= " ".$value;
+  }
+  public function __toString()
+  {
+    if ($this->values === '') return '';
+    return " ".$this->name."=\"".$this->values."\"";
+  }
+}
+
+
+//  class CommitteeSeat
+//  --------------------------------------------------------------------------------------------------------------------------------
+/*  Holds the information from the database for one row of the seats table. The constructor generates a committeeType
+ *  string based on the is_standing, is_special, is_college, and is_subcommittee booleans of the committees table for
+ *  the seat.
+ */
+class CommitteeSeat
+{
+  public $seat_id, $committee_id, $person_id, $committee_name, $divisionRequirement,
+         $electionDate, $expirationDate, $renewalReceived,
+         $isFaculty, $isInstructionalFaculty, $isUndergraduate, $isGraduate, $isEvening,
+         $person_name, $pro_tem_person_id, $pro_tem_person_name, $pro_tem_expiration_date, $isChair, $committee_type;
+  public function __construct($seat_id, $committee_id, $person_id, $committee_name, $divisionRequirement,
+                              $electionDate, $expirationDate, $renewalReceived,
+                              $isFaculty, $isInstructionalFaculty, $isUndergraduate, $isGraduate, $isEvening,
+                              $person_name, $pro_tem_person_id, $pro_tem_person_name, $pro_tem_expiration_date, $chair,
+                              $is_subcommittee, $is_college, $is_special, $is_standing)
+  {
+    $this->seat_id = str_pad($seat_id, 5, '0', STR_PAD_LEFT);
+    $this->committee_id = $committee_id;
+    $this->person_id = $person_id;
+    $this->committee_name = $committee_name;
+    $this->divisionRequirement = $divisionRequirement;
+    $this->isFaculty = $isFaculty == 't';
+    $this->isInstructionalFaculty = $isInstructionalFaculty == 't';
+    $this->isUndergraduate = $isUndergraduate == 't';
+    $this->isGraduate = $isGraduate == 't';
+    $this->isEvening = $isEvening == 't';
+    $this->electionDate = new DateTime($electionDate);
+    $this->expirationDate = new DateTime($expirationDate);
+    $this->person_name = $person_name;
+    $this->pro_tem_person_id = $pro_tem_person_id;
+    $this->pro_tem_person_name = $pro_tem_person_name;
+    $this->pro_tem_expiration_date = new DateTime($pro_tem_expiration_date);
+    $this->isChair = $chair == 't';
+    $this->renewalReceived = $renewalReceived == 't';
+
+    if ($is_subcommittee == 't')  $this->committee_type = "Subcommittees";
+    if ($is_college == 't')       $this->committee_type = "College Committees";
+    if ($is_special == 't')       $this->committee_type = "Special Committees";
+    if ($is_standing == 't')      $this->committee_type = "Standing Committees";
+
+  }
+};
+
+//  Global Variables
+//  -----------------------------------------------------------------------------------------------------------------
+$faculty_seats = array();
+$student_seats = array();
+$thisCommittee = 0;
+$thisCommitteeType = "";
+
+$lastElection = 'last Senate election date unknown';
+$conn = pg_connect("dbname=senate user=web_user");
+$result = pg_query($conn, 'SELECT max(election_date) AS "last_election", max(modified) AS "last_modified" FROM seats');
+$row = pg_fetch_assoc($result);
+$lastElection = new DateTime($row['last_election']);
+$lastElection = $lastElection->format('F j, Y');
+$lastModifiedDate = new DateTime($row['last_modified']);
+$lastModified = $lastModifiedDate->format('F j, Y \a\t g:m a');
+$lastRenewal = "None";
+$result = pg_query($conn, 'SELECT max(modified) as "latest_renewal" FROM seats WHERE renewal_received AND is_current');
+$row = pg_fetch_assoc($result);
+if ($row['latest_renewal'])
+{
+  $lastRenewal = new DateTime($row['latest_renewal']);
+  $lastRenewal = $lastRenewal->format('F j, Y');
+}
+$today = new DateTime();
+$todayPlusThreeMonths = new DateTime();
+$todayPlusThreeMonths->modify('3 months');
+pg_free_result($result);
+
+
+//  Get the information for all the currently-active committees' seats. Exclude expired seats.
+$query = <<<EOT
+  SELECT seats.id as "seat_id", committee_id, person_id, committees.name as committee_name, divisions.abbreviation,
+  election_date, expiration_date, is_faculty_seat,
+  is_instructional_faculty_seat, is_undergraduate_student_seat, is_graduate_student_seat, is_evening_student_seat, 
+  first_name, last_name,
+  chair_id = person_id  as is_chair, renewal_received, is_subcommittee, is_college, is_special, is_standing,
+  pro_tem_person_id, pro_tem_election_date, pro_tem_expiration_date
+  FROM committees, divisions, seats, people
+  WHERE
+      committees.is_active
+    AND
+      committees.id = seats.committee_id
+    AND
+      divisions.id = seats.division_id
+    AND
+      people.id = seats.person_id
+    AND
+      seats.is_current
+  ORDER BY
+      is_subcommittee, is_college, is_special, is_standing, committees.name, expiration_date, divisions.id, last_name
+EOT;
+$result = pg_query($conn, $query) or die("All seats query failed: ".pg_last_error($conn));
+
+//  Initialize student and faculty seat arrays
+//  -----------------------------------------------------------------------------------------------------------------
+while ($row = pg_fetch_assoc($result))
+{
+  $pro_tem_person_id = null;
+  $pro_tem_person_name = '';
+  $pro_tem_expiration_date = $row['pro_tem_expiration_date'];
+  if ( ($pro_tem_expiration_date !== NULL) && new DateTime($pro_tem_expiration_date) > $today)
+  {
+    $second_result = pg_query($conn, "SELECT first_name, last_name from people where id = {$row['pro_tem_person_id']}");
+    $pro_tem_person = pg_fetch_assoc($second_result);
+    $pro_tem_person_id = $row['pro_tem_person_id'];
+    $pro_tem_person_name = $pro_tem_person['first_name'].' '.$pro_tem_person['last_name'];
+    pg_free_result($second_result);
+  }
+  if ( $row['is_faculty_seat'] === 't' )
+  {
+    $faculty_seats[] = new CommitteeSeat($row['seat_id'], $row['committee_id'], $row['person_id'],
+    $row['committee_name'], $row['abbreviation'],
+    $row['election_date'], $row['expiration_date'], $row['renewal_received'],
+    $row['is_faculty_seat'], $row['is_instructional_faculty_seat'],
+    $row['is_undergraduate_student_seat'], $row['is_graduate_student_seat'], $row['is_evening_student_seat'],
+    $row['first_name'].' '.$row['last_name'], 
+    $pro_tem_person_id, $pro_tem_person_name, $row['pro_tem_expiration_date'], $row['is_chair'],
+    $row['is_subcommittee'], $row['is_college'], $row['is_special'], $row['is_standing']);
+  }
+  else
+  {
+    $student_seats[] = new CommitteeSeat($row['seat_id'], $row['committee_id'], $row['person_id'],
+    $row['committee_name'], $row['abbreviation'],
+    $row['election_date'], $row['expiration_date'], $row['renewal_received'],
+    $row['is_faculty_seat'], $row['is_instructional_faculty_seat'],
+    $row['is_undergraduate_student_seat'], $row['is_graduate_student_seat'], $row['is_evening_student_seat'],
+    $row['first_name'].' '.$row['last_name'], 
+    $pro_tem_person_id, $pro_tem_person_name, $row['pro_tem_expiration_date'], $row['is_chair'],
+    $row['is_subcommittee'], $row['is_college'], $row['is_special'], $row['is_standing']);
+  }
+}
+
+pg_free_result($result);
+
+//  generateFacultyRows()
+//  -----------------------------------------------------------------------------------------------------------------
+/*
+ *  Generate an html table row for each faculty opening. Add headings as necessary.
+ */
+  function generateFacultyRows()
+  {
+    global $faculty_seats, $conn, $this_committee_id, $this_committee_type, $num_seats;
+
+    if (count($faculty_seats) == 0)
+    {
+      echo "<tr><td colspan='5' class='dbError'>Error: No faculty seats!</td></tr>\n";
+    }
+
+    // Get number of faculty seats on each committee for row span of committee name column
+    $result = pg_query($conn, "SELECT committee_id, count(*) AS num_seats FROM seats"
+                            . " WHERE is_faculty_seat AND is_current GROUP BY committee_id");
+    $num_seats = array();
+    while ($row = pg_fetch_assoc($result))
+    {
+      $num_seats[$row['committee_id']] = $row['num_seats'];
+    }
+    pg_free_result($result);
+    $this_committee_id = 0;
+    $this_committee_type = "";
+    $even_numbered_committee = false;
+
+    // Generate the table body
+    foreach ($faculty_seats as $seat)
+    {
+      generateRow($seat, true);
+    }
+    echo "      </tbody>\n";
+  }
+
+//  generateStudentRows()
+//  ------------------------------------------------------------------------------------------------------------
+  function generateStudentRows()
+  {
+    global $student_seats, $conn, $this_committee_id, $this_committee_type, $num_seats;
+    if (count($student_seats) == 0)
+    {
+      echo "<tr><td colspan='5' class='dbError'>Error: No student seats!</td></tr>\n";
+    }
+    // Get number of student seats on each committee for row span of committee name column
+    $result = pg_query($conn, "SELECT committee_id, count(*) AS num_seats FROM seats"
+                            . " WHERE is_current AND NOT is_faculty_seat GROUP BY committee_id");
+    $num_seats = array();
+    while ($row = pg_fetch_assoc($result))
+    {
+      $num_seats[$row['committee_id']] = $row['num_seats'];
+    }
+    pg_free_result($result);
+    $this_committee_id = 0;
+    $this_committee_type = '';
+    $even_numbered_committee = false;
+
+    // Generate the table body
+    foreach ($student_seats as $seat)
+    {
+      generateRow($seat, false);
+    }
+    echo "      </tbody>\n";
+  }
+
+//  generateRow()
+//  ----------------------------------------------------------------------------------------------------------
+/*  Generates table rows, inserting heading rows for commmittees and committee types as necessary.
+ */
+    function generateRow($seat, $is_faculty_seat)
+    {
+      global $todayPlusThreeMonths, $this_committee_id, $this_committee_type, $num_seats, $show_only_open_seats, 
+             $even_numbered_committee;
+      $chairText = '';
+      $rowClass = new HTML_Attribute('class');
+      if (preg_match("/OPEN/", $seat->person_name)) $rowClass->addValue('open-seat');
+      $seatClass = new HTML_Attribute('class');
+      if ($is_faculty_seat) $seatClass->addValue("faculty-seat");
+      $seatClass->addValue("person-id:{$seat->person_id}");
+      $seatClass->addValue('seat-holder');
+      if ($seat->pro_tem_person_id !== null)
+      {
+        $seatClass->addValue("pro-tem");
+        $seatClass->addValue("pro-tem-id:{$seat->pro_tem_person_id}");
+      }
+      if ($seat->isChair)
+      {
+        $chairText = ' (Chair)';
+        $seatClass->addValue('chair');
+      }
+      if ($seat->expirationDate < $todayPlusThreeMonths)
+      {
+        if ($seat->renewalReceived)
+        {
+          $seatClass->addValue('renewal-received');
+        }
+        else
+        {
+          $seatClass->addValue('expiring');
+        }
+      }
+      //  Is this the first row for a committee?
+      if ( $this_committee_id != $seat->committee_id )
+      {
+        if ($this_committee_id != '')
+        {
+          echo <<<EOT
+        </tbody>
+
+EOT;
+        }
+        //  Is this the first committee of this type?
+        if ($this_committee_type != $seat->committee_type)
+        {
+          //Generate header rows for the committee type
+          $even_numbered_committee = false;
+          echo <<<EOT
+
+        <tbody class="type-heading">
+          <tr class="type-heading-row-1">
+            <th class="type-heading-cell" colspan='5'>{$seat->committee_type}</th>
+          </tr>
+          <tr class="type-heading-row-2">
+            <th class="type-heading-cell">Committee Name</th>
+            <th class="type-heading-cell">Seat ID</th>
+            <th class="type-heading-cell">Division</th>
+            <th class="type-heading-cell">Expiration</th>
+            <th class="type-heading-cell">Seat Holder</th>
+          </tr>
+        </tbody>
+
+EOT;
+        $this_committee_type = $seat->committee_type;
+        }
+        $rowClass->addValue('start-committee');
+
+        // Generate the committee name cell
+        $even_numbered_committee = !$even_numbered_committee;
+        $even_odd_class = $even_numbered_committee ? 'even-numbered' : 'odd-numbered';
+        echo <<<EOT
+        <tbody class="committee-body $even_odd_class">
+          <tr{$rowClass}>
+            <th scope='row' rowspan='{$num_seats[$seat->committee_id]}'>{$seat->committee_name}</th>
+
+EOT;
+        $this_committee_id = $seat->committee_id;
+      }
+      else
+      {
+        echo <<<EOT
+          <tr{$rowClass}>
+
+EOT;
+      }
+      /*  set title attribute
+       *    Depends on whether seat is open, occupied, or occupied pro-tem
+       */
+      $person_name = $seat->person_name;
+      $vacated_or_elected = ($seat->person_id === '1') ? 'Vacated ' : 'Elected ';
+      $title_string = " title='{$vacated_or_elected} {$seat->electionDate->format('Y-m-d')}'";
+      if ($seat->pro_tem_person_name !== '')
+      {
+        $title_string = " title='Serving in place of {$person_name} until {$seat->pro_tem_expiration_date->format('Y-m-d')}'";
+        $person_name = $seat->pro_tem_person_name;
+      }
+      echo <<<EOT
+            <td>{$seat->seat_id}</td>
+            <td>{$seat->divisionRequirement}</td>
+            <td class="expiration-date">{$seat->expirationDate->format('M Y')}</td>
+            <td{$seatClass}{$title_string}>{$person_name} {$chairText}</td>
+          </tr>
+
+EOT;
+    }
+
+?>
+@
+
+
+1.8
+log
+@Handle expired pro tempore seat holders (do not display them).
+@
+text
+@d2 1
+a2 1
+//  $Id: manage_seats.php,v 1.7 2010/01/08 06:12:02 vickery Exp vickery $
+d17 3
+d83 3
+a85 2
+/*  Holds the information from the database for one row of the seats table. The constructor generates a committeeType string
+ *  based on the is_standing, is_special, is_college, and is_subcommittee booleans of the committees table for the seat.
+d92 1
+a92 1
+         $person_name, $pro_tem_person_name, $pro_tem_expiration_date, $isChair, $committee_type;
+d96 1
+a96 1
+                              $person_name, $pro_tem_person_name, $pro_tem_expiration_date, $chair,
+d112 1
+d159 2
+a160 1
+  is_instructional_faculty_seat, is_undergraduate_student_seat, is_graduate_student_seat, is_evening_student_seat, first_name, last_name,
+d183 1
+d185 1
+a185 1
+	$pro_tem_expiration_date = $row['pro_tem_expiration_date'];
+d190 1
+d201 2
+a202 1
+    $row['first_name'].' '.$row['last_name'], $pro_tem_person_name, $row['pro_tem_expiration_date'], $row['is_chair'],
+d212 2
+a213 1
+    $row['first_name'].' '.$row['last_name'], $pro_tem_person_name, $row['pro_tem_expiration_date'], $row['is_chair'],
+d291 2
+a292 1
+      global $todayPlusThreeMonths, $this_committee_id, $this_committee_type, $num_seats, $show_only_open_seats, $even_numbered_committee;
+d300 5
+@
+
+
+1.7
+log
+@Remove chair status and update committees table when the
+chair of a committee vacates a seat.
+@
+text
+@d2 1
+a2 1
+//  $Id: manage_seats.php,v 1.6 2009/12/31 05:14:28 vickery Exp vickery $
+d17 4
+d144 1
+d178 2
+a179 1
+  if ( $row['pro_tem_person_id'] !== NULL )
+@
+
+
+1.6
+log
+@Bug fix: latest renewal was not being reported correctly.
+@
+text
+@d2 1
+a2 1
+//  $Id: manage_seats.php,v 1.5 2009/12/29 05:24:26 vickery Exp vickery $
+d17 3
+d236 1
+a236 1
+    echo "</tbody>\n";
+d266 1
+a266 1
+    echo "</tbody>\n";
+d316 12
+a327 13
+          <tbody class="type-heading">
+            <tr class="type-heading-row-1">
+              <th class="type-heading-cell" colspan='5'>{$seat->committee_type}
+              </th>
+            </tr>
+            <tr class="type-heading-row-2">
+              <th class="type-heading-cell">Committee Name</th>
+              <th class="type-heading-cell">Seat ID</th>
+              <th class="type-heading-cell">Division</th>
+              <th class="type-heading-cell">Expiration</th>
+              <th class="type-heading-cell">Seat Holder</th>
+            </tr>
+          </tbody>
+d339 2
+a340 4
+        <tr{$rowClass}>
+          <th scope='row' rowspan='{$num_seats[$seat->committee_id]}'>
+            {$seat->committee_name}
+          </th>
+d348 1
+a348 1
+        <tr{$rowClass}>
+d364 5
+a368 5
+      <td>{$seat->seat_id}</td>
+      <td>{$seat->divisionRequirement}</td>
+      <td class="expiration-date">{$seat->expirationDate->format('M Y')}</td>
+      <td{$seatClass}{$title_string}>{$person_name} {$chairText}</td>
+    </tr>
+@
+
+
+1.5
+log
+@Whitespace and bug fixes.
+Restrict administrative access to administrators.
+@
+text
+@d2 1
+a2 1
+//  $Id: manage_seats.php,v 1.4 2009/11/09 06:17:20 vickery Exp vickery $
+d17 4
+d130 1
+a130 1
+$result = pg_query($conn, 'SELECT max(modified) as "latest_renewal" FROM seats WHERE renewal_received');
+@
+
+
+1.4
+log
+@Numerous changes accompanying the change to make this
+application look like committee_seats. Added the
+expiration-date class value to cells in that column.
+@
+text
+@d2 1
+a2 1
+//  $Id: manage_seats.php,v 1.3 2009/11/08 04:14:53 vickery Exp vickery $
+d4 8
+a11 5
+/*  This module creates arrays of CommitteeSeat objects, one for students and one for faculty. All seats on all committees are
+ *  included. Two functions iterate over these arrays and generate table rows with info about the seats. Classes are added to
+ *  the data cells for the seat holder where the holder is the chair and/or the seat is expiring this year. Seats are listed
+ *  in committee id order, which is presumably alphabetical. On the assumption that OPEN seats have a people.id of 1, open seats
+ *  are listed after seats held by people.
+d17 5
+a35 14
+if (isset($_POST['login-email']))
+{
+  $conn = pg_connect("dbname=senate user=web_user");
+  $result = pg_query($conn, "SELECT id as person_id, is_db_admin FROM people where qc_email ~* '{$_POST['login-email']}'");
+  if (pg_num_rows($result) === 1)
+  $is_db_admin = false;
+  {
+    $row = pg_fetch_assoc($result);
+    $is_db_admin = $row['is_db_admin'] === 't';
+  }
+  $_SESSION['authenticated'] = $is_db_admin;
+  $_SESSION['operator'] = $row['person_id'];
+  pg_free_result($result);
+}
+d80 1
+a80 1
+															$isFaculty, $isInstructionalFaculty, $isUndergraduate, $isGraduate, $isEvening,
+d222 1
+a222 1
+		$even_numbered_committee = false;
+d229 1
+a229 1
+		echo "</tbody>\n";
+d252 1
+a252 1
+		$even_numbered_committee = false;
+d259 1
+a259 1
+		echo "</tbody>\n";
+d273 2
+a274 2
+			if ($is_faculty_seat) $seatClass->addValue("faculty-seat");
+			$seatClass->addValue("person-id:{$seat->person_id}");
+d306 1
+a306 1
+					$even_numbered_committee = false;
+d316 1
+a316 1
+							<th class="type-heading-cell">Seat ID</th>
+d329 2
+a330 2
+				$even_numbered_committee = !$even_numbered_committee;
+				$even_odd_class = $even_numbered_committee ? 'even-numbered' : 'odd-numbered';
+d360 1
+a360 1
+			<td>{$seat->seat_id}</td>
+d362 1
+a362 1
+      <td class="expiration-date">{$seat->expirationDate->format('F Y')}</td>
+@
+
+
+1.3
+log
+@Removed all references to the renewal_not_required column of the seats
+table in the senate database ... because the column was deleted from
+the table.
+@
+text
+@d2 1
+a2 1
+//  $Id: manage_seats.php,v 1.2 2009/11/02 00:40:06 vickery Exp vickery $
+d14 5
+d83 1
+a83 1
+         $person, $proTemPerson, $proTemExpirationDate, $isChair, $committeeType;
+d87 1
+a87 1
+                              $who, $proTemWho, $proTemExpirationDate, $chair,
+d102 3
+a104 3
+    $this->person = $who;
+    $this->proTemPerson = $proTemWho;
+    $this->proTemExpirationDate = new DateTime($proTemExpirationDate);
+d108 4
+a111 4
+    if ($is_subcommittee == 't')  $this->committeeType = "Subcommittee";
+    if ($is_college == 't')       $this->committeeType = "College Committees";
+    if ($is_special == 't')       $this->committeeType = "Special Committees";
+    if ($is_standing == 't')      $this->committeeType = "Standing Committees";
+d139 2
+a140 2
+$todayPlusSixMonths = new DateTime();
+$todayPlusSixMonths->modify('6 months');
+d171 1
+a171 1
+  $pro_tem_who = '';
+d176 1
+a176 1
+    $pro_tem_who = $pro_tem_person['first_name'].' '.$pro_tem_person['last_name'];
+d186 1
+a186 1
+    $row['first_name'].' '.$row['last_name'], $pro_tem_who, $row['pro_tem_expiration_date'], $row['is_chair'],
+d196 1
+a196 1
+    $row['first_name'].' '.$row['last_name'], $pro_tem_who, $row['pro_tem_expiration_date'], $row['is_chair'],
+d210 1
+a210 1
+    global $faculty_seats, $conn, $thisCommittee, $thisCommitteeType, $num_seats;
+d214 1
+a214 1
+      echo "<tr><td colspan='4' class='dbError'>Error: No faculty seats!</td></tr>\n";
+d218 2
+a219 2
+    $result = pg_query($conn, 
+        "SELECT committee_id, count(*) AS num_seats FROM seats WHERE is_faculty_seat AND is_current GROUP BY committee_id");
+d226 3
+a228 2
+    $thisCommittee = 0;
+    $thisCommitteeType = "";
+d235 1
+d242 1
+a242 1
+    global $student_seats, $conn, $thisCommittee, $thisCommitteeType, $num_seats;
+d245 1
+a245 1
+      echo "<tr><td colspan='3' class='dbError'>Error: No student seats!</td></tr>\n";
+d248 2
+a249 2
+    $result = pg_query($conn, 
+        "SELECT committee_id, count(*) AS num_seats FROM seats WHERE is_current AND NOT is_faculty_seat GROUP BY committee_id");
+d256 3
+a258 2
+    $thisCommittee = 0;
+    $thisCommitteeType = '';
+d265 1
+d270 1
+a270 1
+/*  Generates table rows, inserting heading rows for committee types as necessary.
+d274 1
+a274 1
+      global $todayPlusSixMonths, $thisCommittee, $thisCommitteeType, $num_seats;
+d276 2
+d279 2
+a280 2
+      if ($is_faculty_seat) $seatClass->addValue("faculty-seat");
+      $seatClass->addValue("person_id:{$seat->person_id}");
+d287 1
+a287 1
+      if ($seat->expirationDate < $todayPlusSixMonths)
+d299 1
+a299 1
+      if ( $thisCommittee != $seat->committee_id )
+d301 7
+d309 1
+a309 1
+        if ($thisCommitteeType != $seat->committeeType)
+d312 1
+d314 15
+a328 11
+          <tr class="type-heading-row-1">
+            <th class="type-heading-cell" colspan='5'>{$seat->committeeType}
+            </th>
+          </tr>
+          <tr class="type-heading-row-2">
+            <th class="type-heading-cell">Committee</th>
+            <th class="type-heading-cell">Seat ID</th>
+            <th class="type-heading-cell">Division</th>
+            <th class="type-heading-cell">Expiration</th>
+            <th class="type-heading-cell">Seat Holder</th>
+          </tr>
+d330 1
+a330 1
+        $thisCommitteeType = $seat->committeeType;
+d332 2
+d335 2
+d338 2
+a339 1
+        <tr class='start-committee'>
+d343 1
+d345 1
+a345 1
+        $thisCommittee = $seat->committee_id;
+d350 2
+a351 1
+        <tr>
+d357 1
+a357 1
+      $person_name = $seat->person;
+d360 1
+a360 1
+      if ($seat->proTemPerson !== '')
+d362 2
+a363 2
+        $title_string = " title='Serving in place of {$person_name} until {$seat->proTemExpirationDate->format('Y-m-d')}'";
+        $person_name = $seat->proTemPerson;
+d366 1
+a366 1
+      <td>{$seat->seat_id}</td>
+d368 1
+a368 1
+      <td>{$seat->expirationDate->format('F Y')}</td>
+d371 1
+@
+
+
+1.2
+log
+@Updated title string for seats to show date of vacancy as well
+as election or pro tem info.
+@
+text
+@d2 1
+a2 1
+//  $Id: manage_seats.php,v 1.1 2009/11/01 04:47:46 vickery Exp vickery $
+d14 4
+d76 1
+a76 1
+         $electionDate, $expirationDate, $renewalReceived, $renewalNotNeeded,
+d80 2
+a81 3
+                              $electionDate, $expirationDate,
+                              $renewalReceived, $renewalNotNeeded,
+                              $isFaculty, $isInstructionalFaculty, $isUndergraduate, $isGraduate, $isEvening,
+a101 1
+    $this->renewalNotNeeded = $renewalNotNeeded == 't';
+d124 2
+a125 1
+$lastModified = $row['last_modified'];
+d144 1
+a144 1
+  chair_id = person_id  as is_chair, renewal_received, renewal_not_needed, is_subcommittee, is_college, is_special, is_standing,
+d178 1
+a178 1
+    $row['election_date'], $row['expiration_date'], $row['renewal_received'], $row['renewal_not_needed'],
+d188 1
+a188 1
+    $row['election_date'], $row['expiration_date'], $row['renewal_received'], $row['renewal_not_needed'],
+a281 4
+        else if ($seat->renewalNotNeeded)
+        {
+          $seatClass-> addValue('renewal-not-needed');
+        }
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d2 1
+a2 1
+//  $Id$
+d13 4
+a16 1
+ *		$Log$
+d21 11
+a31 11
+	$conn = pg_connect("dbname=senate user=web_user");
+	$result = pg_query($conn, "SELECT id as person_id, is_db_admin FROM people where qc_email ~* '{$_POST['login-email']}'");
+	if (pg_num_rows($result) === 1)
+	$is_db_admin = false;
+	{
+		$row = pg_fetch_assoc($result);
+		$is_db_admin = $row['is_db_admin'] === 't';
+	}
+	$_SESSION['authenticated'] = $is_db_admin;
+	$_SESSION['operator'] = $row['person_id'];
+	pg_free_result($result);
+d72 1
+a72 1
+	       $electionDate, $expirationDate, $renewalReceived, $renewalNotNeeded,
+d74 1
+a74 1
+				 $person, $proTemPerson, $proTemExpirationDate, $isChair, $committeeType;
+d76 5
+a80 5
+															$electionDate, $expirationDate,
+															$renewalReceived, $renewalNotNeeded,
+                    					$isFaculty, $isInstructionalFaculty, $isUndergraduate, $isGraduate, $isEvening, 
+															$who, $proTemWho, $proTemExpirationDate, $chair,
+                    					$is_subcommittee, $is_college, $is_special, $is_standing)
+d84 1
+a84 1
+		$this->person_id = $person_id;
+d92 1
+a92 1
+		$this->electionDate = new DateTime($electionDate);
+d95 2
+a96 2
+		$this->proTemPerson = $proTemWho;
+		$this->proTemExpirationDate = new DateTime($proTemExpirationDate);
+d128 2
+a129 2
+	$lastRenewal = new DateTime($row['latest_renewal']);
+	$lastRenewal = $lastRenewal->format('F j, Y');
+d139 1
+a139 1
+	election_date, expiration_date, is_faculty_seat,
+d142 1
+a142 1
+	pro_tem_person_id, pro_tem_election_date, pro_tem_expiration_date
+d163 8
+a170 8
+	$pro_tem_who = '';
+	if ( $row['pro_tem_person_id'] !== NULL )
+	{
+		$second_result = pg_query($conn, "SELECT first_name, last_name from people where id = {$row['pro_tem_person_id']}");
+		$pro_tem_person = pg_fetch_assoc($second_result);
+		$pro_tem_who = $pro_tem_person['first_name'].' '.$pro_tem_person['last_name'];
+		pg_free_result($second_result);
+	}
+d173 4
+a176 3
+    $faculty_seats[] = new CommitteeSeat($row['seat_id'], $row['committee_id'], $row['person_id'], $row['committee_name'], $row['abbreviation'],
+		$row['election_date'], $row['expiration_date'], $row['renewal_received'], $row['renewal_not_needed'],
+    $row['is_faculty_seat'], $row['is_instructional_faculty_seat'], 
+d183 4
+a186 3
+    $student_seats[] = new CommitteeSeat($row['seat_id'], $row['committee_id'], $row['person_id'], $row['committee_name'], $row['abbreviation'],
+		$row['election_date'], $row['expiration_date'], $row['renewal_received'], $row['renewal_not_needed'],
+    $row['is_faculty_seat'], $row['is_instructional_faculty_seat'], 
+d210 2
+a211 1
+    $result = pg_query($conn, "SELECT committee_id, count(*) AS num_seats FROM seats WHERE is_faculty_seat AND is_current GROUP BY committee_id");
+d238 2
+a239 1
+    $result = pg_query($conn, "SELECT committee_id, count(*) AS num_seats FROM seats WHERE is_current AND NOT is_faculty_seat GROUP BY committee_id");
+d265 2
+a266 2
+			if ($is_faculty_seat) $seatClass->addValue("faculty-seat");
+			$seatClass->addValue("person_id:{$seat->person_id}");
+d325 11
+a335 8
+			//	Check for pro tem seat holder
+			$person_name = $seat->person;
+			$title_string = ($seat->person_id === '1') ? '' : " title='Elected {$seat->electionDate->format('Y-m-d')}'";
+			if ($seat->proTemPerson !== '')
+			{
+				$title_string = " title='Serving in place of {$person_name} until {$seat->proTemExpirationDate->format('Y-m-d')}'";
+				$person_name = $seat->proTemPerson;
+			}
+@

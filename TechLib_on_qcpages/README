@@ -1,0 +1,29 @@
+
+April 9, 2005
+Chris Vickery
+
+1.  The web page is standards-compliant ... mostly.  There is a
+Mozilla-specific extension in the style-all.css file to put the
+rounded corners on the border of the content box:
+  -moz-border-radius: 10pt;
+When CSS3 is finalized and implemented by browsers, change the
+the line to:
+  border-radius: 10pt;
+or whatever syntax it takes in the final version of CSS3.
+Meantime, it seems to do no harm, and looks nice in Firefox.
+
+2.  There are two index pages in the Minutes directory, index.html,
+and index.php.  When/if OCT lets us use embedded php without going
+through cgi-wrap, the index.html page can be removed so the php file
+gets used.  For now index.html does a redirect to the corresponding
+directory on babbage.cs.qc.edu.
+
+  The PHP script in the Minutes directory generates the list of links
+  to meeting minutes by scanning the directory for files with names in
+  the form yyyy-mm-dd.pdf. All ten characters must appear in the date
+  part of the file name, and must all be numeric except for the
+  hyphens.
+  
+  Just upload new pdf files to this directory, make sure they have
+  read access permissions set for everyone, and they will immediately
+  and automatically be added to the list.

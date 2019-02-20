@@ -1,0 +1,121 @@
+/* manage_people.css */
+
+html, body {
+  margin:auto; padding: 0;
+  background-color:#006;
+  color:#fff;
+  }
+
+h1 {
+	text-align:center;
+  }
+form {
+  margin:auto;
+	display:table;
+  }
+legend {
+	font: 1em Arial, Helvetica, sans-serif;
+  }
+.checkboxes {
+	display:table-row;
+  }
+.checkboxCell {
+	display:table-cell;
+  margin:0; padding:0 1em;
+  border: 1px solid white;
+  }
+
+fieldset {
+  padding-top: 0;
+  }
+fieldset>input {margin:0 1em 0 0;width:100%;padding:0;}
+
+#edit-form {
+  display: none;
+  position:absolute;
+  left:25%;
+  top:6em;
+  background-color:#999;
+  }
+#person-id-msg, #num-undo-msg {
+	margin: 0.5em 0;
+  padding:0;
+  text-align:center;
+  font:1em Arial, Helvetica, sans-serif;
+  }
+
+#editContactInfo div, #editStudent-SpecificInfo div { display:table-row; }
+
+#actionButtons { text-align:center; }
+#commitEditButton {
+	color: green;
+  }
+#cancelEditButton {
+  color:red;
+  }
+
+label {
+	display: table-cell;
+  padding: 0 0.5em;
+  text-align:right;
+  }
+
+input, select {
+	display:table-cell;
+  }
+.prompt {
+  display:table-row;
+  height:2em;
+  }
+.prompt span {
+  display:table-cell;
+	vertical-align:bottom;
+  padding-bottom:0.25em;
+  }
+
+.error-input {
+  background-color: #fcc;
+  }
+
+.error-message {
+  font: 2em bold Arial, Helvetica, sans-serif;
+  color:red;
+  background-color:#ccf;
+  }
+.normal-message {
+  font:1.2em Arial, Helvetica, sans-serif;
+  margin:1em;
+  }
+
+#results-table {
+  margin: 1em auto;
+  width:100%;
+	display:none;
+  border-collapse:collapse;
+  border:1px solid white;
+  }
+#results-table th {
+  font-family:Verdana, Arial, Helvetica, sans-serif;
+  font-weight:normal;
+  text-align:left;
+  border-left:1px solid #66c;
+  padding: 0 0.5em;
+  }
+#results-table td {
+  border-top: 1px solid white;
+  border-left:1px solid #66c;
+  vertical-align:top;
+  padding: 0 0.5em;
+  }
+#message-div {
+  display:none;
+  }
+
+/* Order matters: A changed element that is then edited
+ * gets the beingEdited property while being edited. */
+.hasChanged {
+	background-color:#6c6;
+  }
+.beingEdited {
+	background-color:#cc6;
+  }

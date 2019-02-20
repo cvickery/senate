@@ -1,0 +1,119 @@
+<?php
+//  $Id: login.xhtml,v 1.2 2010/01/02 06:31:03 vickery Exp vickery $
+/*
+ *    The login page for the Nominating Committee’s internal site.
+ *    Forces an HTTPS connection and displays a login form.
+ *    Serves as the action agent for the login form: verifies the user
+ *    is a member of the Nominating Committee and redirects to the index
+ *    page if login is successful.
+ *
+ *  $Log: login.xhtml,v $
+ *  Revision 1.2  2010/01/02 06:31:03  vickery
+ *  Added New/Repeat password fields.
+ *  Changed the instructions to eliminate reference to QC email address.
+ *  Changed footnote text to reflect requirement for password and
+ *  option for changing it.
+ *
+ *  Revision 1.1  2009/12/29 05:31:03  vickery
+ *  Initial revision
+ *
+ *
+ *
+ */
+  session_start();
+  if (! isset($_SERVER['HTTPS']))
+  {
+    header("Location: https://{$_SERVER['SERVER_NAME']}{$_SERVER['REQUEST_URI']}");
+    exit;
+  }
+  header("Vary: Accept");
+  $content_type = "";
+  if (  array_key_exists("HTTP_ACCEPT", $_SERVER) &&
+        stristr($_SERVER["HTTP_ACCEPT"], "application/xhtml+xml") ||
+        stristr($_SERVER["HTTP_USER_AGENT"], "W3C_Validator")
+      )
+  {
+    $content_type = "application/xhtml_xml";
+    header("Content-type: application/xhtml+xml");
+    header("Last-Modified: "
+                    .gmdate('r',filemtime($_SERVER['SCRIPT_FILENAME'])));
+    print("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+  }
+  else
+  {
+    $content_type = "text/html";
+    header("Content-type: text/html; charset=utf-8");
+  }
+ ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+  "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="<?php echo $content_type; ?>; charset=UTF-8" />
+    <title>Nominating Committee Internal Web Site</title>
+    <link rel="shortcut icon" href="../images/AS.ico" />
+    <link rel="stylesheet"
+          type="text/css"
+          media="all"
+          href="css/nomcom-internal.css"
+    />
+  </head>
+  <body>
+  <div id="header">
+    <img src="images/AS_Gavel.png" alt="" />
+    <h1>Nominating Committee</h1>
+    <h2>Internal Web Site</h2>
+  </div>
+
+<?php
+  if (isset($_SESSION['login_message']) && $_SESSION['login_message'])
+  {
+    $form_msg = "<p class='error-msg'>{$_SESSION['login_message']}</p>\n";
+  }
+  else
+  {
+    $form_msg = "";
+  }
+
+  echo<<<EOT
+  <form id="login" method="post" action="scripts/do_login.php">
+    <fieldset>
+      $form_msg
+      <p>
+        Access to this site is restricted to current members of the Nominating Committee.
+      </p>
+      <legend>Login</legend>
+      <label for="email" class="required">Email:</label>
+      <input type="text" id="email" name="email" />
+      <label for="password" class="required">Current Password:</label>
+      <input type="password" id="password" name="password" />
+      <label for="password1">New Password:</label>
+      <input type="password" id="password1" name="password1" />
+      <label for="password2">Repeat New Password:</label>
+      <input type="password" id="password2" name="password2" />
+      <button type="submit">Login</button>
+      <p class="footnote">
+        Initially, your current password is the same as the previous one for this site. To change it,
+        enter the new password in the <em>New</em> and <em>Repeat</em> fields. Otherwise, leave those
+        two fields empty.
+      </p>
+      <p class="footnote">
+        Contact the chair of the Nominating Committee if you forget your password.
+      </p>
+    </fieldset>
+  </form>
+EOT;
+  ?>
+
+  <div id="footer">
+      <a href="http://validator.w3.org/check?uri=referer">XHTML</a> - <a
+         href="http://jigsaw.w3.org/css-validator/check/referer">CSS</a>
+      <em>Last updated
+        <?php echo gmdate("Y-m-d", filemtime($_SERVER['SCRIPT_FILENAME'])); ?>.
+      </em>
+  </div>
+  <script type="text/javascript">
+    document.getElementById('email').focus();
+  </script>
+</body>
+</html>

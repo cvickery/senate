@@ -1,0 +1,115 @@
+head	1.1;
+access;
+symbols;
+locks
+	vickery:1.1; strict;
+comment	@# @;
+
+
+1.1
+date	2009.11.15.00.27.53;	author vickery;	state Exp;
+branches;
+next	;
+
+
+desc
+@Handles the business of seats expiring by marking expired seats as not
+current and creating a new set of seats with proper expiration dates.
+Handles transferral of memberships to the new seats if the present
+seat holder submits a renewal application.
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#! /usr/local/bin/php
+<?php
+
+//  rollover(.php)
+//  -----------------------------------------------------------------------------------------------------------------
+/*  Generates a new set of seats when a set of seats terms expire by copying the expiring seat info with the
+ *  new expiration date equal to the current date plus the number of years per term for the committee given in
+ *  the committees table. People who did not renew are dropped from their seats; others are carried forward.
+ *  The new seats are marked current, and the old ones not-current.
+ *
+ *	TODO: Make this into a cron script simply by having it roll over all seats that have expired rather than
+ *  taking the expiration date from the command line.
+ *
+ *  TODO: The INSERT query lists the data values in the order in which the columns occur in the seats table;
+ *  this will break if you add, remove, or reorder columns -- especially since the last few columns are not
+ *  given values, thus picking up their default values. What if is_foreign_student_seat gets added to the
+ *  seats table? But: the renewal_received column is temporary until application forms are entered into the
+ *  database; and keeping the column names and values coordinated seems as error-prone as not listing the
+ *  names at all.
+ *
+ *  TODO If the chair fails to renew, the committee's chair needs to be un-marked.
+ *  TODO Generate expiration events for all expiring seats, and renewal events for all seats being automatically
+ *  renewed.
+ *
+ *  C. Vickery
+ *  December 2008
+ */
+
+  //  Connect to the database
+  $senate = pg_connect("dbname=senate") or die ("Could not connect to db");
+
+  //  Get the expiration date of the seats to be rolled over on the command line and the date on which
+  //  renewals were elected by the Senate from the command line.
+  if ($argc == 3)
+  {
+    $target_expiration_date = $argv[1];
+    $election_date = $argv[2];
+
+    //  Get a list of all the expiring seats
+    $result = pg_query($senate,
+          "SELECT * FROM seats,committees "
+          . "  WHERE "
+          . "     expiration_date = CAST( '$target_expiration_date' AS DATE) "
+          . "   AND "
+          . "     committees.id = committee_id");
+
+    //  For each expiring seat, create a new seat with the new expiration date equal to the current
+    //  expiration date plus the number of years give by the years_per_term column of the corresponding
+    //  committee in the committees table.
+
+    //  Wrap this process in a transaction in case anything goes wrong
+    pg_query($senate, "BEGIN");
+    while ($row = pg_fetch_assoc($result))
+    {
+
+      //  Change expired seats to OPEN (person_id == 1)
+      if ( !(($row['renewal_received'] == 't') || ($row['renewal_not_needed'] == 't')) )
+      {
+        $row['person_id'] = 1;
+      }
+
+      //  Create the new seats.
+      $query = "INSERT INTO seats VALUES ( "
+        . "DEFAULT, {$row['committee_id']}, {$row['division_id']}, "
+        . "'{$row['is_faculty_seat']}', '{$row['is_undergraduate_student_seat']}', '{$row['is_graduate_student_seat']}', "
+        . "'{$row['is_evening_student_seat']}', "
+        . "{$row['person_id']}, CAST('$target_expiration_date' AS DATE) + ({$row['years_per_term']} * INTERVAL'1 year'), "
+        . "CAST('$election_date' AS DATE) ) ";
+      //echo "$query\n";
+      $insert = pg_query($senate, $query);
+    }
+    //  New seats have been created; dectivate the current ones
+    $update = pg_query($senate, "UPDATE seats SET is_current = 'f' "
+        . "WHERE expiration_date = CAST('$target_expiration_date' AS DATE)");
+    echo "Rolled ".pg_affected_rows($update)." seats over.";
+
+    //  Commit the transaction: db will be updated only if there were no errors.
+    pg_query($senate, "COMMIT");
+  }
+  else
+  {
+    die( "Usage: rollover expiration_date election_date\n" );
+  }
+  pg_close($senate);
+
+?>
+
+@

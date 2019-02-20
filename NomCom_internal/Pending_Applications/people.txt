@@ -1,0 +1,24 @@
+
+faculty	Bassey, Magnus O	Ed (Secondary Education and Youth Services)	
+faculty	KATSAN, GERASIMUS	None (European Languages and Literature)	
+faculty	Lord, Kenneth	MNS (Computer Science)	
+faculty	Miller, Michael J.	None (Library)	
+faculty	Saint-Hilaire, Line Augustin	Ed (Elementary and Early Childhood Education)	
+faculty	Vesselinov, Elena	SS (Sociology)	
+grad	Jainarain, Karran	Ed (Elementary and Early Childhood Education)	2012-06
+undergrad	Bhawanie, Arnera	None (Undeclared)	2014-06
+undergrad	DeMasters, Andrew	SS (Political Science)	2012-06
+undergrad	Galang, Benjamin	None (Undeclared)	2014-06
+undergrad	Gatti, Janine	SS (Economics)	2012-06
+undergrad	Gittens, Delacia	SS (Political Science)	2012-06
+undergrad	Handler, Zachary	SS (Economics)	2012-06
+undergrad	Koruthu, Sheril	MNS (Biology)	2014-06
+undergrad	Olvina, Elnora	None (Undeclared)	2013-06
+undergrad	Perna, Joseph	SS (Political Science)	2012-06
+undergrad	Prusak, Melissa	MNS (Biology)	2013-06
+undergrad	Rechany, Karen	SS (Political Science)	2013-06
+undergrad	Robinson, James P.	SS (Political Science)	2012-06
+undergrad	Stern, Rachel	MNS (Psychology)	2012-06
+undergrad	Sula, Jurgen	MNS (Biology)	2013-06
+undergrad	Villanueva, Alejandra	SS (Bachelors of Business Administration)	2013-06
+undergrad	Wohlberg, Charlie	SS (Political Science)	2012-06

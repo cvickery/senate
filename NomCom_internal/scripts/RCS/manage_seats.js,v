@@ -1,0 +1,1656 @@
+head	1.10;
+access;
+symbols;
+locks
+	vickery:1.10; strict;
+comment	@# @;
+
+
+1.10
+date	2010.09.04.21.59.37;	author vickery;	state Exp;
+branches;
+next	1.9;
+
+1.9
+date	2010.08.31.04.24.25;	author vickery;	state Exp;
+branches;
+next	1.8;
+
+1.8
+date	2010.08.30.05.35.20;	author vickery;	state Exp;
+branches;
+next	1.7;
+
+1.7
+date	2010.04.11.04.09.37;	author vickery;	state Exp;
+branches;
+next	1.6;
+
+1.6
+date	2010.01.09.23.40.07;	author vickery;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	2010.01.09.22.55.32;	author vickery;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2010.01.08.06.12.02;	author vickery;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2009.11.09.06.15.16;	author vickery;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2009.11.02.21.04.00;	author vickery;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2009.11.02.00.51.17;	author vickery;	state Exp;
+branches;
+next	;
+
+
+desc
+@Client-side controller for manage_seats.xhtml application.
+Initial check-in on the occasion of completing all major functions.
+@
+
+
+1.10
+log
+@Bug fix: pro-tem or regular seat holder choice was always being displayed,
+even when there was not pro-tem seat holder.
+@
+text
+@//  $Id: manage_seats.js,v 1.9 2010/08/31 04:24:25 vickery Exp vickery $
+
+/*
+ *  Click on a seat-holder to change the status of a seat.
+ *
+ *  $Log: manage_seats.js,v $
+ *  Revision 1.9  2010/08/31 04:24:25  vickery
+ *  Bug fix in chair change caused by bad regex when trimming whitespace
+ *  from the ends of lines. Don't do that.
+ *
+ *  Revision 1.8  2010/08/30 05:35:20  vickery
+ *  Added support for resignation of either the regular or pro-tem
+ *  seat holder when a seat has a pro-tem seat holder.
+ *
+ *  Revision 1.7  2010/04/11 04:09:37  vickery
+ *  Added webkit support for arrow keys in the person-select list.
+ *  Webkit generates only keyup events for arrow keys, which unforunatley
+ *  means they do not auto-repeat. This revision uses keypressArrows, initially
+ *  false, to signal when keypress events for arrow keys are detected and used;
+ *  the keyup listener uses this global boolean to decide whether it should
+ *  handle them or not.
+ *
+ *  Revision 1.6  2010/01/09 23:40:07  vickery
+ *  Fixed string trimmer, which didn't actually do anything. Used string
+ *  trimmer on the XMLHttpRequest.responseText when verifying events to
+ *  fix a new bug in which the response text was coming back with a newline
+ *  at the end.
+ *
+ *  Revision 1.5  2010/01/09 22:55:32  vickery
+ *  Handle the various permutations of changing chairs without the current
+ *  chair resigning from the committee: elect a new chair when there was none;
+ *  chair resigns as chair but not from the committee; new chair elected to
+ *  replace existing chair.
+ *  Various global variable name changes to make code easier to understand.
+ *
+ *  Revision 1.4  2010/01/08 06:12:02  vickery
+ *  Remove chair status and update committees table when the
+ *  chair of a committee vacates a seat.
+ *
+ *  Revision 1.3  2009/11/09 06:15:16
+ *  Minor changes (whitespace cleanup); changed the
+ *  class value to person-id. Changes made at the time
+ *  application was made to look more like the
+ *  application.
+ *
+ *  Revision 1.2  2009/11/02 21:04:00
+ *  Implemented renewals.
+ *
+ *  Revision 1.1  2009/11/02 00:51:17
+ *  Initial
+ *
+ *
+ */
+if (typeof Core === 'undefined')
+{
+  alert('Core library is missing');
+}
+else
+{
+  Core.start
+  (
+    (function()
+      {
+        /*  allPersonsList is a list of person objects from the database: id, name, and is_faculty
+         *  fields.
+         *
+         */
+        var keypressArrows                = false;
+        var xmlhttpreq                    = null;
+        var requestObject                 = null;
+        var allPersonsList                = [];
+        var allPersonsIndex               = -1;
+
+        var personSelectFieldset          = null;
+        var thisPerson                    = null;
+        var personForm                    = null;
+        var personTextLabel               = null;
+        var personText                    = null;
+
+        var eventTypeFieldset             = null;
+        var renewalRadioButton            = null;
+        var proceduralRadioButton         = null;
+        var graduationRadioButton         = null;
+        var departureRadioButton          = null;
+        var resignationRadioButton        = null;
+        var newChairRadioButton           = null;
+        var proTemRadioButton             = null;
+
+        var proTemOrSeatHolderFieldset    = null;
+        var proTemPersonRadioButton       = null;
+        var seatHolderPersonRadioButton   = null;
+        var proTemOrSeatHolderEventType   = null;
+        var proTemPersonName              = null;
+        var seatHolderPersonName          = null;
+
+        var electionDateFieldset          = null;
+        var electionDate                  = null;
+        var vacancyDateFieldset           = null;
+        var vacancyDatePromptLabel        = null;
+        var vacancyDate                   = null;
+        var proTemElectionDateFieldset    = null;
+        var proTemElectionDate            = null;
+        var proTemExpirationDateFieldset  = null;
+        var proTemExpirationDate          = null;
+        var proceduralCommentFieldset     = null;
+        var proceduralComment             = null;
+
+        var suggestionList                = null;
+        var suggestionListItems           = [];
+        var suggestionListIndex           = -1;
+
+        //  These values get filled in when the user clicks on a seat.
+        var seat_id                       = null;
+        var is_faculty_seat               = null;
+        var is_chair_seat                 = null;
+        var currentSeatHolder             = null;
+        var proTemSeatHolder              = null;
+        var currentSeatHolderTextNode     = null;
+        var currentChairTextNode          = null;
+        var committee_name                = null;
+        var eventType                     = null;
+
+        //  verifyUpdate()
+        //  ---------------------------------------------------------------------------------------
+        /*  Verify that the seat got updated and update the table to reflect it.
+         */
+          function verifyUpdate()
+          {
+            if (xmlhttpreq.readyState === 4)
+            {
+              if (trim(xmlhttpreq.responseText) !== "OK")
+              {
+                alert("Update failed: " + xmlhttpreq.responseText);
+              }
+              else
+              {
+                switch (requestObject.event_type)
+                {
+                  case 'election':
+                    currentSeatHolderTextNode.nodeValue = thisPerson.name;
+                    Core.removeClass(currentSeatHolderTextNode.parentNode, 'person-id:1');
+                    Core.addClass(currentSeatHolderTextNode.parentNode, 
+                                                              'person-id:' + thisPerson.person_id);
+                    currentSeatHolderTextNode.parentNode.setAttribute('title',
+                                                         'Elected ' + requestObject.election_date);
+                    break;
+                  case 'renewal':
+                    Core.addClass(currentSeatHolderTextNode.parentNode, 'renewal-received');
+                    break;
+                  case 'procedural':
+                  case 'resignation':
+                  case 'departure':
+                  case 'graduation':
+                    //  Have to check who resigned, and recreate what must have happened to the db
+                    /*  person-id goes to 1 or to the id of the pro-tem holder
+                     *  pro-tem-person-id definitely goes away
+                     *  text node value goes to OPEN or to the name of the person who did not resign
+                     */
+                    if (proTemSeatHolder)
+                    {
+                      //  The pro-tem holder is either resigning or being made regular. In either
+                      //  case, there is no longer a pro-tem holder.
+                      Core.removeClass(currentSeatHolderTextNode.parentNode,           'pro-tem');
+                      Core.removeClass(currentSeatHolderTextNode.parentNode,
+                                                'pro-tem-person-id:' + proTemSeatHolder.person_id);
+                      if (proTemSeatHolder.person_id === requestObject.person_id)
+                      {
+                        // The pro-tem holder resigned: revert to the regular holder
+                        currentSeatHolderTextNode.nodeValue = currentSeatHolder.name;
+                      }
+                      else
+                      {
+                        //  The regular holder resigned: make the pro-tem holder the regular holder
+                        Core.removeClass(currentSeatHolderTextNode.parentNode, 
+                                                       'person-id:' + currentSeatHolder.person_id);
+                        Core.addClass(currentSeatHolderTextNode.parentNode,
+                                                        'person-id:' + proTemSeatHolder.person_id);
+                        currentSeatHolderTextNode.nodeValue = proTemSeatHolder.name;
+                      }
+                    }
+                    else
+                    {
+                      //  The regular holder resigned and there is no pro-tem: the seat is open
+                      currentSeatHolderTextNode.nodeValue = 'OPEN';
+                      Core.removeClass(currentSeatHolderTextNode.parentNode, 
+                                                       'person-id:' + currentSeatHolder.person_id);
+                      Core.addClass(currentSeatHolderTextNode.parentNode, 'person-id:1');
+                      Core.removeClass(currentSeatHolderTextNode.parentNode, 'chair');
+                      currentSeatHolderTextNode.parentNode.is_chair_seat = false;
+                      currentSeatHolderTextNode.parentNode.setAttribute('title', 
+                                                          'Vacated ' + requestObject.vacancy_date);
+                    }
+                    break;
+                  case 'chair-change':
+                    if (currentChairTextNode !== null)
+                    {
+                      Core.removeClass(currentChairTextNode.parentNode, 'chair');
+                      currentChairTextNode.parentNode.is_chair_seat = false;
+                      currentChairTextNode.nodeValue = /(.*) \(/.exec(currentChairTextNode.nodeValue)[1];
+                    }
+                    if (currentSeatHolderTextNode !== currentChairTextNode)
+                    {
+                      Core.addClass(currentSeatHolderTextNode.parentNode, 'chair');
+                      currentSeatHolderTextNode.parentNode.is_chair_seat = true;
+                      currentSeatHolderTextNode.nodeValue += ' (Chair)';
+                    }
+                    break;
+                  case 'pro-tem':
+                    currentSeatHolderTextNode.nodeValue = thisPerson.name;
+                    Core.removeClass(currentSeatHolderTextNode.parentNode, 'person-id:' + currentSeatHolder.person_id);
+                    Core.addClass(currentSeatHolderTextNode.parentNode, 'person-id:' + thisPerson.person_id);
+                    currentSeatHolderTextNode.parentNode.setAttribute('title',
+                        'Serving in place of ' + currentSeatHolder.name + ' until ' + requestObject.expiration_date);
+                    break;
+                  default:
+                    break;
+                }
+              }
+            }
+          }
+
+        //  updateSeat()
+        //  ---------------------------------------------------------------------------------------
+        /*  Update the database.
+         *  The request object contains the info needed to create a new row in the seat_events table
+         *  and to update a row in the seats or committees table.
+         */
+          function updateSeat()
+          {
+            requestObject = {};
+            requestObject.seat_id = seat_id;
+            requestObject.is_chair_seat = is_chair_seat;
+            requestObject.committee_name = committee_name;
+            requestObject.event_type = eventType;
+            switch (eventType)
+            {
+              case 'renewal':
+                requestObject.person_id = currentSeatHolder.person_id;
+                requestObject.renewal_date = trim(vacancyDate.value);
+                break;
+              case 'election':
+                requestObject.person_id = thisPerson.person_id;
+                requestObject.election_date = trim(electionDate.value);
+                break;
+              case 'graduation':
+              case 'departure':
+              case 'resignation':
+                requestObject.person_id = currentSeatHolder.person_id;
+                if (proTemSeatHolder && proTemPersonRadioButton.checked)
+                {
+                  requestObject.person_id = proTemSeatHolder.person_id;
+                }
+                requestObject.vacancy_date  = trim(vacancyDate.value);
+                break;
+              case 'pro-tem':
+                requestObject.person_id = thisPerson.person_id;
+                requestObject.election_date = trim(proTemElectionDate.value);
+                requestObject.expiration_date  = trim(proTemExpirationDate.value);
+                break;
+              case 'chair-change':
+                requestObject.person_id = currentSeatHolder.person_id;
+                break;
+              case 'procedural':
+                requestObject.person_id = currentSeatHolder.person_id;
+                requestObject.vacancy_date = trim(vacancyDate.value);
+                requestObject.comment = proceduralComment.value;
+                break;
+              default: throw new Error('Invalid eventType');
+            }
+            init_xmlhttpreq('scripts/update_seat.php?request='+JSON.stringify(requestObject), verifyUpdate);
+          }
+
+        //  resetPersonForm()
+        //  ---------------------------------------------------------------------------------------
+        /*  Hide the person form and the suggestion list; reset the related list indices.
+         */
+          function resetPersonForm()
+          {
+            personForm.style.visibility = 'hidden';
+            suggestionList.style.visibility = 'hidden';
+            personText.value = '';
+            allPersonsIndex = -1;
+            suggestionListIndex = -1;
+          }
+
+        //  initializeAllPersonsList()
+        //  ---------------------------------------------------------------------------------------
+        /*  XMLHttpRequest event handler.
+         *  With the allPersonsList complete, make each table cell for seats clickable, and add a
+         *  person object to each one.
+         */
+          function initializeAllPersonsList()
+          {
+            if (xmlhttpreq.readyState == 4)
+            {
+              allPersonsList = [];
+              var people = JSON.parse(xmlhttpreq.responseText);
+              for (person in people)
+              {
+                allPersonsList.push(people[person]);
+              }
+            }
+            resetPersonForm();
+
+            //  Now that we have the people, make seat-holder names clickable and associate the
+            //  corresponding person object with each one.
+            var seatCells                   = document.getElementsByTagName('td');
+            for (cell in seatCells)
+            {
+              //  Operate on seat-holder table cells.
+              if (Core.hasClass(seatCells[cell], 'seat-holder'))
+              {
+                Core.addEventListener(seatCells[cell], 'click', seatCellClickListener);
+
+                // Find the person in the allPersons array, and put a reference to it in this td.
+                var class_str = seatCells[cell].getAttribute('class');
+                var person_id_str = /:(\d*?)( |$)/.exec(class_str);
+                person_id_str = person_id_str[1];
+                seatCells[cell].person = getPerson(person_id_str);
+                //  Tag this td as a faculty|chair seat or not as the case may be.
+                seatCells[cell].is_faculty_seat = /faculty-seat/.test(class_str);
+                seatCells[cell].is_chair_seat = /chair/.test(class_str);
+              }
+            }
+          }
+
+        //  getPerson()
+        //  ---------------------------------------------------------------------------------------
+        /*  Given a person's ID, return the corresponding person from the allPersonsList.
+         */
+          function getPerson(person_id)
+          {
+            for (var i=0; i<allPersonsList.length; i++)
+            {
+              if (person_id === allPersonsList[i].person_id)
+              {
+                return allPersonsList[i];
+              }
+            }
+            return null;
+          }
+
+        //  formatEventDialog()
+        //  ---------------------------------------------------------------------------------------
+        /*    Set up the structure of the event dialog box when the user clicks on a seat holder or
+         *    one of the event type radio buttons.
+         */
+          function formatEventDialog(evt)
+          {
+            evt = evt ? evt : window.event;
+            eventTypeFieldset.style.display             = 'none';
+            personSelectFieldset.style.display          = 'none';
+            electionDateFieldset.style.display          = 'none';
+            vacancyDateFieldset.style.display           = 'none';
+            proTemElectionDateFieldset.style.display    = 'none';
+            proTemExpirationDateFieldset.style.display  = 'none';
+            proTemOrSeatHolderFieldset.style.display    = 'none';
+            proceduralCommentFieldset.style.display     = 'none';
+            if (currentSeatHolder.person_id === '1')
+            {
+              //  Seat is currently open: this must be an election.
+              personTextLabel.firstChild.nodeValue        =
+                "Select the person elected to fill open seat " + seat_id + ':';
+              personSelectFieldset.style.display          = 'block';
+              electionDateFieldset.style.display          = 'block';
+              personText.focus();
+            }
+            else
+            {
+              //  Seat is currently occupied: either a renewal was received, vacate it, set new
+              //  chair, or name a pro-tem holder. 2010-08-27: or replace pro-tem holder with original holder.
+              eventTypeFieldset.style.display             = 'block';
+
+              if (renewalRadioButton.checked)
+              {
+                vacancyDatePromptLabel.firstChild.nodeValue =
+                "When did " + currentSeatHolder.name + " submit a renewal application?";
+                vacancyDateFieldset.style.display           = 'block';
+              }
+              //  Person vacated a seat by graduation, resignation, or departure from QC
+              if ( graduationRadioButton.checked ||
+                   departureRadioButton.checked  ||
+                   resignationRadioButton.checked )
+              {
+                var thePerson = currentSeatHolder.name;
+                if (proTemSeatHolder !== null)
+                {
+                  proTemPersonName.firstChild.nodeValue = proTemSeatHolder.name;
+                  seatHolderPersonName.firstChild.nodeValue = currentSeatHolder.name;
+                  proTemOrSeatHolderEventType.firstChild.nodeValue = (graduationRadioButton.checked ? 'graduated' :
+                      (departureRadioButton.checked ? 'left QC' : 'resigned'));
+                  proTemOrSeatHolderFieldset.style.display = 'block';
+                  if (proTemPersonRadioButton.checked) { thePerson = proTemSeatHolder.name; }
+                }
+                else
+                {
+                  proTemOrSeatHolderFieldset.style.display = 'none';
+                }
+                var vacated_because = (graduationRadioButton.checked ? ' graduate?' :
+                    (departureRadioButton.checked ? ' leave QC?' : ' resign?'));
+                vacancyDatePromptLabel.firstChild.nodeValue =
+                "When did " + thePerson + ' ' + vacated_because;
+                vacancyDateFieldset.style.display           = 'block';
+              }
+              if (proTemRadioButton.checked)
+              {
+                personTextLabel.firstChild.nodeValue        =
+                    "Who is the temporary replacement for " + currentSeatHolder.name + " on seat " + seat_id + '?';
+                personSelectFieldset.style.display          = 'block';
+                proTemElectionDateFieldset.style.display    = 'block';
+                proTemExpirationDateFieldset.style.display  = 'block';
+                personText.focus();
+              }
+              if (proceduralRadioButton.checked)
+              {
+                vacancyDatePromptLabel.firstChild.nodeValue = "Vacancy date?";
+                vacancyDateFieldset.style.display           = 'block';
+                proceduralCommentFieldset.style.display     = 'block';
+              }
+              // No further info needed if new chair option: no record is kept of when the new chair was
+              // elected to that post.
+            }
+          }
+
+        //  seatCellClickListener()
+        //  ---------------------------------------------------------------------------------------
+        /*  User clicked on a seatholder: capture info about the seat and current seat holder; set
+         *  up dialog for finding out what to do.
+         */
+          function seatCellClickListener(evt)
+          {
+            evt = evt ? evt : window.event;
+
+            currentSeatHolderTextNode       = this.firstChild;
+            var thisRow                     = this.parentNode;
+            var seatIdCell                  = thisRow.getElementsByTagName('td')[0];  // skip header col if present
+            seat_id                         = seatIdCell.firstChild.nodeValue - 0;    // convert string to number
+            is_faculty_seat                 = this.is_faculty_seat;
+            is_chair_seat                   = this.is_chair_seat;
+            var committeeTbodyNode          = thisRow.parentNode;
+            committee_name                  = committeeTbodyNode.
+                  getElementsByTagName('tr')[0].getElementsByTagName('th')[0].firstChild.nodeValue;
+            currentChairTextNode            = null;
+            var committee_seats             = committeeTbodyNode.getElementsByTagName('td');
+            for (var i = 0; i < committee_seats.length; i++)
+            {
+              if (Core.hasClass(committee_seats[i], 'chair'))
+              {
+                currentChairTextNode = committee_seats[i].firstChild;
+                break;
+              }
+            }
+            //  In case seat person has changed, update the cell's person element.
+            var class_str                   = this.getAttribute('class');
+
+            var person_id_str               = /person-id:(\d*?)( |$)/.exec(class_str);
+            person_id_str                   = person_id_str[1];
+            this.person                     = getPerson(person_id_str);
+            currentSeatHolder               = this.person;
+            
+            proTemSeatHolder                = null;
+            var proTem_id_str               = /pro-tem-id:(\d*?)( |$)/.exec(class_str);
+            if (proTem_id_str)
+            {
+              this.proTem_person            = getPerson(proTem_id_str[1]);
+              proTemSeatHolder              = this.proTem_person;
+            }
+            graduationRadioButton.disabled  = this.person.is_faculty; //  Nice touch, Chris.
+            formatEventDialog(evt);
+
+            resetPersonForm();
+            personForm.style.visibility = 'visible';
+            personText.focus();
+         }
+
+        //  personSubmitListener()
+        //  ---------------------------------------------------------------------------------------
+        /*  Replacement person selected: update if valid.
+         *  Selection can happen three ways:
+         *  1.  Select person from suggestion list using keyboard: use suggestionListIndex.
+         *  2.  Select person from suggestion list using mouse: use allPersonsIndex.
+         *  3.  Type person's name correctly: find exact match in allPersonsList.
+         *  4.  None of the above: complete and abject failure.
+         */
+          function personSubmitListener(evt)
+          {
+            evt = evt ? evt : window.event;
+            thisPerson = null;
+            if (suggestionListIndex !== -1)
+            {
+              thisPerson = allPersonsList[suggestionListItems[suggestionListIndex].allPersonsIndex];
+            }
+            else if (allPersonsIndex !== -1)
+            {
+              thisPerson = allPersonsList[allPersonsIndex];
+            }
+            else
+            {
+              for (var person in allPersonsList)
+              {
+                if (allPersonsList[person].name.toLowerCase() === personText.value.toLowerCase())
+                {
+                  thisPerson = allPersonsList[person];
+                  break;
+                }
+              }
+            }
+
+            //  Determine type of event(s) and confirm data before doing the update.
+            /*
+             *    OPEN    -> Person   Election.
+             *    Person  -> OPEN     Resignation, graduation, departure, or procedural.
+             *                        Expiration: happens only during rollover.
+             *    Person  -> Person   Different people:
+             *                          Temporary replacement.
+             *                            OR
+             *                          Resignation, graduation, departure,
+             *                          or procedural AND Election.
+             *                        Same person: happens only during rollover when a person renews.
+             *    Procedural removals need a comment explaining. the event.
+             *    Temporary replacements need new person, election date, and termination date.
+             */
+            try
+            {
+              var confirmMsg = "Kindly confirm that ";
+              if (currentSeatHolder.person_id === '1')
+              {
+                if (thisPerson)
+                {
+                  //  Simple date sanity check here: update_seat.php will check one-year interval.
+                  if (Date.parse(electionDate.value) < Date.parse('January 1, 2009'))
+                  {
+                    throw new Error("Election date is not valid");
+                  }
+                  {
+                    eventType = 'election';
+                    confirmMsg += thisPerson.name + " (" + thisPerson.person_id
+                            + (thisPerson.is_faculty ? " (faculty)" : "") +")";
+                    confirmMsg += " was elected to fill vacant seat " + seat_id + " on " + 
+                                                                          electionDate.value + ".";
+                  }
+                }
+                else throw new Error("No Person Selected to fill open seat " + seat_id + ".");
+              }
+              else if (renewalRadioButton.checked)
+              {
+                if (Date.parse(vacancyDate.value) < Date.parse('January 1, 2009'))
+                {
+                  throw new Error("Application date is not valid.");
+                }
+                eventType = 'renewal';
+                confirmMsg += currentSeatHolder.name + ' submitted a renewal application on ' + 
+                                                                           vacancyDate.value + ".";
+              }
+              else if (graduationRadioButton.checked  || 
+                       departureRadioButton.checked   || 
+                       resignationRadioButton.checked)
+              {
+                if (Date.parse(vacancyDate.value) < Date.parse('January 1, 2009'))
+                {
+                  throw new Error("Vacancy date is not valid.");
+                }
+                eventType = graduationRadioButton.checked ? 'graduation' :
+                                      (departureRadioButton.checked ? 'departure' : 'resignation');
+                var personVacating = currentSeatHolder;
+                var vacancyString = ' OPEN';
+                if (proTemSeatHolder && proTemPersonRadioButton.checked)
+                {
+                  personVacating = proTemSeatHolder;
+                  vacancyString = ' occupied by ' + currentSeatHolder.name;
+                }
+                if (proTemSeatHolder && seatHolderPersonRadioButton.checked)
+                {
+                  personVacating = currentSeatHolder;
+                  vacancyString = ' occupied by ' + proTemSeatHolder.name;
+                }
+                confirmMsg += personVacating.name + " (" + personVacating.person_id + ")" +
+                  (graduationRadioButton.checked ? " graduated on " :
+                     (departureRadioButton.checked ? " left Queens College on " : " resigned on "))
+                                 + vacancyDate.value + ", leaving seat " + seat_id + vacancyString;
+              }
+              else if (newChairRadioButton.checked)
+              {
+                eventType = 'chair-change';
+                confirmMsg += currentSeatHolder.name + (is_chair_seat ? 
+                      " resigned as chair of the " : " is the new chair of the ") + committee_name;
+                if (currentChairTextNode !== null && 
+                    (currentChairTextNode !== currentSeatHolderTextNode)
+                   )
+                {
+                  var current_chair_name = currentChairTextNode.nodeValue;
+                  current_chair_name = /(.*) \(/.exec(current_chair_name)[1];
+                  confirmMsg += ", replacing " + current_chair_name + ".";
+                }
+                else confirmMsg += '.';
+              }
+              else if (proTemRadioButton.checked)
+              {
+                //  Need expiration date and replacement's name.
+                if (thisPerson)
+                {
+                  if (Date.parse(proTemExpirationDate.value) > Date.parse('January 1, 2009'))
+                  {
+                    eventType = 'pro-tem';
+                    confirmMsg += thisPerson.name + " is serving in place of "
+                             currentSeatHolder.name + " until " + proTemExpirationDate.value + ".";
+                  }
+                  else throw new Error("The pro tem expiration date is not valid");
+                }
+                else throw new Error("No person " (personText.value !== "" ? 
+                         "('"+personText.value+"') ":"") + "named to act as pro tem replacement.");
+              }
+              else if (proceduralRadioButton.checked)
+              {
+                proceduralComment.value = trim(proceduralComment.value);
+                if (proceduralComment.value !== '')
+                {
+                  if (Date.parse(vacancyDate.value) > Date.parse('January 1, 2009'))
+                  {
+                    eventType = 'procedural';
+                    confirmMsg += currentSeatHolder.name + " vacated seat " + seat_id + " on " + 
+                                  vacancyDate.value + ' because "' + proceduralComment.value + '"';
+                  }
+                  else throw new Error("Vacancy date is not valid.");
+                }
+                else throw new Error("Please describe the procedural event.");
+              }
+              else throw new Error("Select one of the reasons.");
+
+              //  Verify with the user, and do the deed.
+              if (confirm(confirmMsg))
+              {
+                updateSeat();
+                resetPersonForm();
+              }
+              else alert('No change made');
+            }
+            catch (e)
+            {
+              alert(e.message);
+            }
+
+            {
+              Core.preventDefault(evt);
+            }
+          }
+
+        //  suggestionChoiceListener()
+        //  ---------------------------------------------------------------------------------------
+        /*  Name chosen from the suggestion list using the mouse.
+         */
+          function suggestionChoiceListener(evt)
+          {
+            evt = evt ? evt : window.event;
+            personText.value = allPersonsList[this.allPersonsIndex].name;
+            resetPersonForm();
+            allPersonsIndex = this.allPersonsIndex;
+            personSubmitListener(evt);
+          }
+
+        //  displaySuggestionList()
+        //  ---------------------------------------------------------------------------------------
+        /*  Creates entire suggestion list based on what has been entered in the personText field.
+         */
+          function displaySuggestionList()
+          {
+            while (suggestionList.firstChild) suggestionList.removeChild(suggestionList.firstChild);
+            suggestionListItems = [];
+            allPersonsIndex     = -1; // Nobody from the database.
+            suggestionListIndex = -1; // Nobody from suggestion list.
+            var re = new RegExp(personText.value, 'i');
+            for (var i = 0; i < allPersonsList.length; i++)
+            {
+              if (re.test(allPersonsList[i].name) && allPersonsList[i].is_faculty == is_faculty_seat)
+              {
+                var listItem = document.createElement('li');
+                listItem.textContent = allPersonsList[i].name;
+                if (allPersonsList[i].is_faculty) Core.addClass(listItem, 'faculty');
+                listItem.allPersonsIndex = i;
+                suggestionList.appendChild(listItem);
+                Core.addEventListener(listItem, 'click', suggestionChoiceListener);
+                suggestionListItems.push(listItem);
+              }
+            }
+            suggestionList.style.visibility = (suggestionListItems.length > 0) ? 'visible' : 'hidden';
+          }
+
+        //  Keyboard event listeners
+        //  =======================================================================================
+        /*
+         *  -moz and -webkit:
+         *  Arrows, tab, letters, and esc are on keyup
+         *  Enter is on keypress
+         *
+         *  -moz: arrows and tab happen on keypress also
+         *
+         *  Opera?
+         *    Throws a 'SyntaxError' from the last line of json2.js.
+         *    Unable to resolve: the json returned from manage_seats.php is valid.
+         *
+         *  IE?
+         */
+
+        //  keypressListener()
+        //  ---------------------------------------------------------------------------------------
+        /*  Keypress in the person input field: respond to up and down arrow keys for navigating the
+         *  suggestion list. But only if the browser generates the events! If not, fall back to
+         *  handling them using keyup events. (And autorepeat won't work.)
+         */
+          function keypressListener(evt)
+          {
+            evt = evt ? evt : window.event;
+            if ((evt.keyCode !== 13) && (evt.keyCode !== 9) && (evt.keyCode !== 38) && (evt.keyCode !== 40)) return;
+
+            if (evt.keyCode === 38) // up arrow
+            {
+              keypressArrows = true;
+              if (suggestionListIndex > 0)
+              {
+                Core.removeClass(suggestionListItems[suggestionListIndex], 'current-choice');
+                suggestionListIndex--;
+                Core.addClass(suggestionListItems[suggestionListIndex], 'current-choice');
+              }
+              return;
+            }
+            if (evt.keyCode === 40) // dn arrow
+            {
+              keypressArrows = true;
+              if (suggestionList.style.visibility === 'hidden') displaySuggestionList();
+              if (suggestionListIndex < (suggestionListItems.length - 1))
+              {
+                if (suggestionListIndex > -1)
+                {
+                  Core.removeClass(suggestionListItems[suggestionListIndex], 'current-choice');
+                }
+                ++suggestionListIndex;
+                Core.addClass(suggestionListItems[suggestionListIndex], 'current-choice');
+              }
+              return;
+            }
+
+            //    If there is a suggestion list item selected, use it as the person text value.
+            //    Then use the person text value as the selected name.
+            if ((suggestionListIndex > -1) && (suggestionListIndex < suggestionListItems.length))
+            {
+              personText.value = suggestionListItems[suggestionListIndex].firstChild.nodeValue;
+              Core.preventDefault(evt);
+            }
+          }
+
+        //  keyupListener()
+        //  ---------------------------------------------------------------------------------------
+        /*  Keyup in the person input field.
+         */
+          function keyupListener(evt)
+          {
+            evt = evt ? evt : window.event;
+            // Ignore arrow keys if they generate keypress events
+            if (keypressArrows && ((evt.keyCode === 38) || (evt.keyCode === 40))) return;
+            //  Otherwise, check for and process arrow keys
+            if (evt.keyCode === 38) // up arrow
+            {
+              if (suggestionListIndex > 0)
+              {
+                Core.removeClass(suggestionListItems[suggestionListIndex], 'current-choice');
+                suggestionListIndex--;
+                Core.addClass(suggestionListItems[suggestionListIndex], 'current-choice');
+              }
+              return;
+            }
+            if (evt.keyCode === 40) // dn arrow
+            {
+              if (suggestionList.style.visibility === 'hidden') displaySuggestionList();
+              if (suggestionListIndex < (suggestionListItems.length - 1))
+              {
+                if (suggestionListIndex > -1)
+                {
+                  Core.removeClass(suggestionListItems[suggestionListIndex], 'current-choice');
+                }
+                ++suggestionListIndex;
+                Core.addClass(suggestionListItems[suggestionListIndex], 'current-choice');
+              }
+              return;
+            }
+            //  For non-arrow keys, create prompt list based on what the user has entered so far.
+            if (personText.value !== "")
+            {
+              displaySuggestionList();
+            }
+          }
+
+
+        //  checkEscapeListener()
+        //  ---------------------------------------------------------------------------------------
+        /*  Reset dialog if user presses the Esc key: active all the time for any keyup event.
+         */
+          function checkEscapeListener(evt)
+          {
+            evt = evt ? evt : window.event;
+            if (evt.keyCode === 27) resetPersonForm();
+          }
+
+
+        //  init_xmlhttpreq()
+        //  ---------------------------------------------------------------------------------------
+        /*  Creates a new XMLHttpRequest object.
+         */
+          function init_xmlhttpreq(target, handler)
+          {
+            xmlhttpreq = null;
+            try
+            {
+              xmlhttpreq = new XMLHttpRequest();
+            }
+            catch (error)
+            {
+              try
+              {
+                xmlhttpreq = new ActiveXObject('Microsoft.XMLHTTP');
+              }
+              catch (error)
+              {
+                alert('Unable to connect to database');
+                return;
+              }
+            }
+            xmlhttpreq.onreadystatechange = handler;
+            xmlhttpreq.open('GET', target, true);
+            xmlhttpreq.send(null);
+          }
+
+        //  trim()
+        //  ---------------------------------------------------------------------------------------
+        /*    String trimmer.
+         */
+         function trim(str)
+         {
+           return /^\s*(.*)\s*$/.exec(str)[1];
+         }
+
+        //  Return Core.runnable object from encapsulating anonymous self-executing function.
+        //  =======================================================================================
+        return {
+
+          //  init()
+          //  -------------------------------------------------------------------------------------
+          init: function()
+          {
+
+            //  Initialize the application
+            //  -----------------------------------------------------------------------------------
+            personForm                    = document.getElementById('person-form');
+            personTextLabel               = document.getElementById('person-prompt-label');
+            personSelectFieldset          = document.getElementById('person-select-fieldset');
+
+            eventTypeFieldset             = document.getElementById('event-type-fieldset');
+            renewalRadioButton            = document.getElementById('renewal-radio');
+            proTemRadioButton             = document.getElementById('pro-tem-radio');
+            proceduralRadioButton         = document.getElementById('procedural-radio');
+            graduationRadioButton         = document.getElementById('graduation-radio');
+            resignationRadioButton        = document.getElementById('resignation-radio');
+            newChairRadioButton           = document.getElementById('chair-change-radio');
+            departureRadioButton          = document.getElementById('departure-radio');
+
+            proTemOrSeatHolderFieldset    = document.getElementById('pro-tem-or-seat-holder-fieldset');
+            proTemPersonRadioButton       = document.getElementById('pro-tem-person-radio');
+            seatHolderPersonRadioButton   = document.getElementById('seat-holder-person-radio');
+            proTemOrSeatHolderEventType   = document.getElementById('which-person-event-type');
+            proTemPersonName              = document.getElementById('pro-tem-person-name');
+            seatHolderPersonName          = document.getElementById('seat-holder-person-name');
+
+            electionDateFieldset          = document.getElementById('election-date-fieldset');
+            electionDate                  = document.getElementById('election-date');
+            vacancyDateFieldset           = document.getElementById('vacancy-date-fieldset');
+            vacancyDatePromptLabel        = document.getElementById('vacancy-date-prompt-label');
+            vacancyDate                   = document.getElementById('vacancy-date');
+            proTemElectionDateFieldset    = document.getElementById('pro-tem-election-date-fieldset');
+            proTemElectionDate            = document.getElementById('pro-tem-election-date');
+            proTemExpirationDateFieldset  = document.getElementById('pro-tem-expiration-date-fieldset');
+            proTemExpirationDate          = document.getElementById('pro-tem-expiration-date');
+            proceduralCommentFieldset     = document.getElementById('procedural-comment-fieldset');
+            proceduralComment             = document.getElementById('procedural-comment-text');
+
+            suggestionList                  = document.createElement('ul');
+            personSelectFieldset.appendChild(suggestionList);
+            personText                      = document.getElementById('person-text');
+            personText.value                = '';
+            personText.setAttribute('autocomplete', 'off');
+            suggestionList.style.visibility = 'hidden';
+            personForm.style.visibility     = 'hidden';
+
+            //  Initialize the choice list from get_all_names.
+            //  -----------------------------------------------------------------------------------
+            init_xmlhttpreq('scripts/get_all_names.php', initializeAllPersonsList, null);
+
+            var cancelButton                = document.getElementById('cancel-button');
+            Core.addEventListener(cancelButton,                 'click',    resetPersonForm);
+            Core.addEventListener(document,                     'keyup',    checkEscapeListener);
+
+            Core.addEventListener(renewalRadioButton,           'click',    formatEventDialog);
+            Core.addEventListener(graduationRadioButton,        'click',    formatEventDialog);
+            Core.addEventListener(departureRadioButton,         'click',    formatEventDialog);
+            Core.addEventListener(proTemRadioButton,            'click',    formatEventDialog);
+            Core.addEventListener(proceduralRadioButton,        'click',    formatEventDialog);
+            Core.addEventListener(resignationRadioButton,       'click',    formatEventDialog);
+            Core.addEventListener(newChairRadioButton,          'click',    formatEventDialog);
+            Core.addEventListener(proTemPersonRadioButton,      'click',    formatEventDialog);
+            Core.addEventListener(seatHolderPersonRadioButton,  'click',    formatEventDialog);
+            Core.addEventListener(personText,                   'keyup',    keyupListener);
+            Core.addEventListener(personText,                   'keypress', keypressListener);
+            Core.addEventListener(personForm,                   'submit',   personSubmitListener);
+          }
+        };
+      }
+    )()
+  );
+}
+@
+
+
+1.9
+log
+@Bug fix in chair change caused by bad regex when trimming whitespace
+from the ends of lines. Don't do that.
+@
+text
+@d1 1
+a1 1
+//  $Id: manage_seats.js,v 1.8 2010/08/30 05:35:20 vickery Exp vickery $
+d7 4
+d395 4
+@
+
+
+1.8
+log
+@Added support for resignation of either the regular or pro-tem
+seat holder when a seat has a pro-tem seat holder.
+@
+text
+@d1 1
+a1 1
+//  $Id: manage_seats.js,v 1.7 2010/04/11 04:09:37 vickery Exp vickery $
+d7 4
+d577 1
+a577 1
+                confirmMsg += currentSeatHolder.name (is_chair_seat ? 
+@
+
+
+1.7
+log
+@Added webkit support for arrow keys in the person-select list.
+Webkit generates only keyup events for arrow keys, which unforunatley
+means they do not auto-repeat. This revision uses keypressArrows, initially
+false, to signal when keypress events for arrow keys are detected and used;
+the keyup listener uses this global boolean to decide whether it should
+handle them or not.
+@
+text
+@d1 1
+a1 1
+//  $Id: manage_seats.js,v 1.6 2010/01/09 23:40:07 vickery Exp vickery $
+d3 2
+a4 2
+/*  2009-08-
+ *  Click on a seat-holder to change the person.
+d7 8
+d81 7
+d109 1
+d134 4
+a137 3
+                    Core.addClass(currentSeatHolderTextNode.parentNode, 'person-id:' + thisPerson.person_id);
+                    currentSeatHolderTextNode.parentNode.setAttribute('title', 'Elected ' +
+                                                                                          requestObject.election_date);
+d146 39
+a184 6
+                    currentSeatHolderTextNode.nodeValue = 'OPEN';
+                    Core.removeClass(currentSeatHolderTextNode.parentNode, 'person-id:' + currentSeatHolder.person_id);
+                    Core.addClass(currentSeatHolderTextNode.parentNode, 'person-id:1');
+                    Core.removeClass(currentSeatHolderTextNode.parentNode, 'chair');
+                    currentSeatHolderTextNode.parentNode.is_chair_seat = false;
+                    currentSeatHolderTextNode.parentNode.setAttribute('title', 'Vacated ' + requestObject.vacancy_date);
+d241 4
+d349 1
+d363 1
+a363 1
+              //  chair, or name a pro tem holder.
+d372 1
+d377 12
+d390 1
+a390 3
+                "When did " + currentSeatHolder.name +
+                (graduationRadioButton.checked ? " graduate?" :
+                    (departureRadioButton.checked ? " leave Queens College?" : " resign?"));
+d408 1
+a408 1
+              // No further info needed if new chair option: no record of when the new chair was
+d443 2
+a444 1
+            var person_id_str               = /:(\d*?)( |$)/.exec(class_str);
+d448 8
+a461 1
+
+d527 2
+a528 1
+                    confirmMsg += " was elected to fill vacant seat " + seat_id + " on " + electionDate.value + ".";
+d540 2
+a541 1
+                confirmMsg += currentSeatHolder.name + ' submitted a renewal application on ' + vacancyDate.value + ".";
+d543 3
+a545 1
+              else if (graduationRadioButton.checked || departureRadioButton.checked || resignationRadioButton.checked)
+d552 14
+a565 2
+                             (departureRadioButton.checked ? 'departure' : 'resignation');
+                confirmMsg += currentSeatHolder.name + " (" + currentSeatHolder.person_id + ")" +
+d567 2
+a568 2
+                    (departureRadioButton.checked ? " left Queens College on " : " resigned on "))
+                    + vacancyDate.value + ", leaving seat " + seat_id + " vacant.";
+d573 5
+a577 3
+                confirmMsg += currentSeatHolder.name +
+                  (is_chair_seat ? " resigned as chair of the " : " is the new chair of the ") + committee_name;
+                if (currentChairTextNode !== null && (currentChairTextNode !== currentSeatHolderTextNode) )
+d593 2
+a594 2
+                    confirmMsg += thisPerson.name + " is serving in place of " +
+                                                 currentSeatHolder.name + " until " + proTemExpirationDate.value + ".";
+d598 2
+a599 2
+                else throw new Error("No person " (personText.value !== "" ? "('"+personText.value+"') ":"") +
+                                                                               "named to act as pro tem replacement.");
+d609 2
+a610 2
+                    confirmMsg += currentSeatHolder.name + " vacated seat " + seat_id + " on " + vacancyDate.value
+                      ' because "' + proceduralComment.value + '"';
+d622 1
+a624 1
+              resetPersonForm();
+d853 7
+d885 2
+a886 2
+            Core.addEventListener(cancelButton,           'click',    resetPersonForm);
+            Core.addEventListener(document,               'keyup',    checkEscapeListener);
+d888 12
+a899 10
+            Core.addEventListener(renewalRadioButton,     'click',    formatEventDialog);
+            Core.addEventListener(graduationRadioButton,  'click',    formatEventDialog);
+            Core.addEventListener(departureRadioButton,   'click',    formatEventDialog);
+            Core.addEventListener(proTemRadioButton,      'click',    formatEventDialog);
+            Core.addEventListener(proceduralRadioButton,  'click',    formatEventDialog);
+            Core.addEventListener(resignationRadioButton, 'click',    formatEventDialog);
+            Core.addEventListener(newChairRadioButton,    'click',    formatEventDialog);
+            Core.addEventListener(personText,             'keyup',    keyupListener);
+            Core.addEventListener(personText,             'keypress', keypressListener);
+            Core.addEventListener(personForm,             'submit',   personSubmitListener);
+@
+
+
+1.6
+log
+@Fixed string trimmer, which didn't actually do anything. Used string
+trimmer on the XMLHttpRequest.responseText when verifying events to
+fix a new bug in which the response text was coming back with a newline
+at the end.
+@
+text
+@d1 1
+a1 1
+//  $Id: manage_seats.js,v 1.5 2010/01/09 22:55:32 vickery Exp vickery $
+d7 6
+d52 1
+d205 1
+a205 1
+
+d559 2
+d584 16
+d602 3
+a604 1
+        /*  Keypress in the input field: respond to up, down, enter, and tab keys.
+a608 1
+
+d613 1
+d620 1
+d624 1
+d635 1
+d637 3
+d643 1
+d654 4
+a657 2
+            if ((evt.keyCode === 38) || (evt.keyCode === 40)) return;
+            if (evt.keyCode === 27)
+d659 6
+a664 3
+              //  Esc -- cancel out of
+              resetPersonForm();
+              Core.stopPropagation(evt);
+d667 1
+a667 2
+
+            if ((evt.keyCode === 13) || (evt.keyCode === 9))
+d669 2
+a670 6
+            //  Tab or enter key pressed.
+            /*
+             *    If there is a suggestion list item selected, use it as the person text value.
+             *    Then use the person text value as the selected name.
+             */
+              if ((suggestionListIndex > -1) && (suggestionListIndex < suggestionListItems.length))
+d672 6
+a677 1
+              personText.value = suggestionListItems[suggestionListIndex].firstChild.nodeValue;
+d679 1
+a679 1
+              Core.preventDefault(evt);
+d681 1
+a681 2
+
+            //  Create prompt list based on what the user has entered so far.
+d687 2
+d699 1
+a744 3
+            //  Initialize the choice list from get_all_names.
+            //  -----------------------------------------------------------------------------------
+            init_xmlhttpreq('scripts/get_all_names.php', initializeAllPersonsList, null);
+d746 1
+a746 1
+            //  Initialize the rest of the
+a747 1
+            //  Set up suggestion list for people
+d781 4
+@
+
+
+1.5
+log
+@Handle the various permutations of changing chairs without the current
+chair resigning from the committee: elect a new chair when there was none;
+chair resigns as chair but not from the committee; new chair elected to
+replace existing chair.
+Various global variable name changes to make code easier to understand.
+@
+text
+@d1 1
+a1 1
+//  $Id: manage_seats.js,v 1.4 2010/01/08 06:12:02 vickery Exp vickery $
+d7 7
+d100 1
+a100 1
+              if (xmlhttpreq.responseText !== "OK")
+d112 1
+a112 1
+                    currentSeatHolderTextNode.parentNode.setAttribute('title', 'Elected ' + 
+d134 1
+a134 1
+                      currentChairTextNode.nodeValue = /(.*) \(/.exec(currentChairTextNode.nodeValue)[1]; 
+d494 1
+a494 1
+                    confirmMsg += thisPerson.name + " is serving in place of " + 
+d693 1
+a693 1
+           return /\S.*\S/.exec(str)[0];
+@
+
+
+1.4
+log
+@Remove chair status and update committees table when the
+chair of a committee vacates a seat.
+@
+text
+@d1 1
+a1 1
+//  $Id: manage_seats.js,v 1.3 2009/11/09 06:15:16 vickery Exp vickery $
+d7 4
+d75 2
+a76 1
+        var seatID                        = null;
+d79 3
+a82 2
+        var updatePersonTextNode          = null;
+        var previousPerson                = null;
+d102 5
+a106 4
+                    updatePersonTextNode.nodeValue = thisPerson.name;
+                    Core.removeClass(updatePersonTextNode.parentNode, 'person-id:1');
+                    Core.addClass(updatePersonTextNode.parentNode, 'person-id:'+thisPerson.person_id);
+                    updatePersonTextNode.parentNode.setAttribute('title', 'Elected ' + requestObject.election_date);
+d109 1
+a109 1
+                    Core.addClass(updatePersonTextNode.parentNode, 'renewal-received');
+d115 20
+a134 5
+                    updatePersonTextNode.nodeValue = 'OPEN';
+                    Core.removeClass(updatePersonTextNode.parentNode, 'person-id:'+previousPerson.person_id);
+                    Core.addClass(updatePersonTextNode.parentNode, 'person-id:1');
+                    Core.removeClass(updatePersonTextNode.parentNode, 'chair');
+                    updatePersonTextNode.parentNode.setAttribute('title', 'Vacated ' + requestObject.vacancy_date);
+d137 5
+a141 5
+                    updatePersonTextNode.nodeValue = thisPerson.name;
+                    Core.removeClass(updatePersonTextNode.parentNode, 'person-id:'+previousPerson.person_id);
+                    Core.addClass(updatePersonTextNode.parentNode, 'person-id:'+thisPerson.person_id);
+                    updatePersonTextNode.parentNode.setAttribute('title',
+                        'Serving in place of '+ previousPerson.name + ' until '+ requestObject.expiration_date);
+d153 2
+a154 2
+         *  The request object contains the info needed to create a new row in the events table and
+         *  to update a row in the seats or committees table.
+d159 1
+a159 1
+            requestObject.seat_id = seatID;
+d166 1
+a166 1
+                requestObject.person_id = previousPerson.person_id;
+d176 1
+a176 1
+                requestObject.person_id = previousPerson.person_id;
+d184 2
+a185 2
+              case 'new-chair':
+                requestObject.person_id = previousPerson.person_id;
+d188 1
+a188 1
+                requestObject.person_id = previousPerson.person_id;
+d282 1
+a282 1
+            if (previousPerson.person_id === '1')
+d286 1
+a286 1
+                "Select the person elected to fill open seat " + seatID + ':';
+d300 1
+a300 1
+                "When did " + previousPerson.name + " submit a renewal application?";
+d308 1
+a308 1
+                "When did " + previousPerson.name +
+d316 1
+a316 1
+                    "Who is the temporary replacement for " + previousPerson.name + " on seat " + seatID + '?';
+d328 2
+a329 1
+              // No further info needed if new chair option.
+d342 1
+a342 1
+            updatePersonTextNode            = this.firstChild;
+d345 1
+a345 1
+            seatID                          = seatIdCell.firstChild.nodeValue - 0;    // convert string to number
+d348 2
+a349 1
+            committee_name                   = thisRow.parentNode.
+d351 10
+d366 1
+a366 1
+            previousPerson                  = this.person;
+d426 1
+a426 1
+              if (previousPerson.person_id === '1')
+d439 1
+a439 1
+                    confirmMsg += " was elected to fill vacant seat " + seatID + " on " + electionDate.value + ".";
+d442 1
+a442 1
+                else throw new Error("No Person Selected to fill open seat " + seatID + ".");
+d451 1
+a451 1
+                confirmMsg += previousPerson.name + ' submitted a renewal application on ' + vacancyDate.value + ".";
+d461 1
+a461 1
+                confirmMsg += previousPerson.name + " (" + previousPerson.person_id + ")" +
+d464 1
+a464 1
+                    + vacancyDate.value + ", leaving seat " + seatID + " vacant.";
+d468 10
+a477 3
+                eventType = 'new-chair';
+                confirmMsg += previousPerson.name +
+                  (is_chair_seat ? " resigned as chair of the " : " is the new chair of the ") + committee_name + "."
+d487 2
+a488 2
+                    confirmMsg += thisPerson.name
+                        " is serving in place of " + previousPerson.name + " until " + proTemExpirationDate.value + ".";
+d492 2
+a493 2
+                else throw new Error("No person "
+                   (personText.value !== "" ? "('"+personText.value+"') ":"") + "named to act as pro tem replacement.");
+d503 1
+a503 1
+                    confirmMsg += previousPerson.name + " vacated seat " + seatID + " on " + vacancyDate.value
+d714 1
+a714 1
+            newChairRadioButton           = document.getElementById('new-chair-radio');
+@
+
+
+1.3
+log
+@Minor changes (whitespace cleanup); changed the person_id
+class value to person-id. Changes made at the time this
+application was made to look more like the committee_seats
+application.
+@
+text
+@d1 1
+a1 1
+//  $Id: manage_seats.js,v 1.2 2009/11/02 21:04:00 vickery Exp vickery $
+d3 1
+a3 1
+/*  2009-08-19
+d7 7
+a13 1
+ *  Revision 1.2  2009/11/02 21:04:00  vickery
+d16 2
+a17 2
+ *  Revision 1.1  2009/11/02 00:51:17  vickery
+ *  Initial revision
+d31 4
+a34 1
+        /*  allPersonsList is a list of person objects from the database: id, name, and is_faculty fields */
+d52 1
+d73 2
+d80 1
+a80 1
+        //  --------------------------------------------------------------------------------
+d111 1
+d119 1
+a119 1
+                        'Serving in place of '+ previousPerson.name+ ' until '+ requestObject.expiration_date);
+d129 4
+a132 4
+        //  --------------------------------------------------------------------------------
+        /*  Update the database with a new seat holder.
+         *  The request object contains the info needed to create a new row in the events
+         *  table and to update a row in the seats table.
+d138 2
+d162 3
+d169 1
+a169 1
+                break
+d176 1
+a176 1
+        //  --------------------------------------------------------------------------------
+d189 1
+a189 1
+        //  --------------------------------------------------------------------------------
+d191 2
+a192 2
+         *  With the allPersonsList complete, make each table cell for seats clickable, and
+         *  add a person object to each one.
+d207 2
+a208 2
+            //  Now that we have the people, make seat-holder names clickable
+            //  and associate the corresponding person object with each one.
+d212 1
+a212 1
+              //  Operate on seat-holder table cells
+d217 1
+a217 1
+                // Find the person in the allPersons array, and put a reference to it in this td
+d219 1
+a219 1
+                var person_id_str = /:(.*?)( |$)/.exec(class_str);
+d222 1
+a222 1
+                //  Tag this td as a faculty seat or not
+d224 1
+d230 1
+a230 1
+        //  -----------------------------------------------------------------------------------
+d246 3
+a248 3
+        //  -----------------------------------------------------------------------------------
+        /*    Set up the structure of the event dialog box when the user clicks on a seat holder
+         *    or one of the event type radio buttons.
+d271 3
+a273 2
+              //  Seat is currently occupied: either a renewal was received, or vacate it, or name a pro tem holder.
+              eventTypeFieldset.style.display               = 'block';
+d306 1
+d311 3
+a313 3
+        //  -----------------------------------------------------------------------------------
+        /*  User clicked on a seatholder: capture info about the seat and current seat holder;
+         *  set up dialog for finding out what to do.
+d324 4
+a327 1
+            //  In case seat person has changed, update the cell's person element
+d329 1
+a329 1
+            var person_id_str               = /:(.*?)( |$)/.exec(class_str);
+d333 1
+a333 1
+            graduationRadioButton.disabled  = this.person.is_faculty; //  Nice touch, Chris
+d343 1
+a343 1
+        //  ------------------------------------------------------------------------------------
+d346 4
+a349 4
+         *  1.  Select person from suggestion list using keyboard: use suggestionListIndex
+         *  2.  Select person from suggestion list using mouse: use allPersonsIndex
+         *  3.  Type person's name correctly: find exact match in allPersonsList
+         *  4.  None of the above: complete and abject failure
+d377 2
+a378 2
+             *    OPEN    -> Person   Election
+             *    Person  -> OPEN     Resignation, graduation, departure, or procedural
+d381 1
+a381 1
+             *                          Temporary replacement
+d383 2
+a384 1
+             *                          Resignation, graduation, departure, or procedural AND Election
+d427 1
+a427 1
+                confirmMsg += previousPerson.name +
+d432 6
+d440 1
+a440 1
+                //  Need expiration date and replacement's name
+d446 1
+a446 1
+                    confirmMsg += thisPerson.name +
+d451 1
+a451 1
+                else throw new Error("No person " +
+d462 1
+a462 1
+                    confirmMsg += previousPerson.name + " vacated seat " + seatID + " on " + vacancyDate.value +
+d483 1
+a483 1
+            finally
+d490 1
+a490 1
+        //  ----------------------------------------------------------------------------------
+d503 1
+a503 1
+        //  ----------------------------------------------------------------------------------------
+d508 2
+a509 2
+            allPersonsIndex     = -1; // Nobody from the database
+            suggestionListIndex = -1; // Nobody from suggestion list
+d528 2
+a529 2
+        //  ---------------------------------------------------------------------------------
+        /*  Keypress in the input field: respond to up, down, enter, and tab keys
+d566 2
+a567 2
+        //  ------------------------------------------------------------------------------------------
+        /*  Keyup in the person input field
+d575 1
+a575 1
+              //  Esc -- cancel out of selection
+d583 1
+a583 1
+            //  Tab or enter key pressed
+d595 1
+a595 1
+            //  Create prompt list based on what the user has entered so far
+d601 9
+d612 2
+a613 2
+        //  ---------------------------------------------------------------------------------
+        /*  Creates a new XMLHttpRequest object
+d640 2
+a641 2
+        //  ---------------------------------------------------------------------------------
+        /*    string trimmer
+d649 1
+a649 1
+        //  =================================================================================
+d653 1
+a653 1
+          //  -------------------------------------------------------------------------------
+d656 2
+a657 2
+            //  Initialize the choice list from get_all_names.php
+            //  -----------------------------------------------------------------------------
+d660 3
+a662 3
+            //  Initialize the rest of the app
+            //  ----------------------------------------------------------------
+            //  Set up suggestion list for people names
+d673 1
+d697 2
+a698 1
+            Core.addEventListener(cancelButton,           'click',    resetPersonForm)
+d706 1
+@
+
+
+1.2
+log
+@Implemented renewals.
+@
+text
+@d1 1
+a1 1
+//  $Id: manage_seats.js,v 1.1 2009/11/02 00:51:17 vickery Exp vickery $
+d7 3
+d38 1
+a38 1
+				var renewalRadioButton						= null;
+d85 2
+a86 2
+                    Core.removeClass(updatePersonTextNode.parentNode, 'person_id:1');
+                    Core.addClass(updatePersonTextNode.parentNode, 'person_id:'+thisPerson.person_id);
+d89 3
+a91 3
+									case 'renewal':
+										Core.addClass(updatePersonTextNode.parentNode, 'renewal-received');
+										break;
+d97 2
+a98 2
+                    Core.removeClass(updatePersonTextNode.parentNode, 'person_id:'+previousPerson.person_id);
+                    Core.addClass(updatePersonTextNode.parentNode, 'person_id:1');
+d103 2
+a104 2
+                    Core.removeClass(updatePersonTextNode.parentNode, 'person_id:'+previousPerson.person_id);
+                    Core.addClass(updatePersonTextNode.parentNode, 'person_id:'+thisPerson.person_id);
+d128 4
+a131 4
+							case 'renewal':
+								requestObject.person_id = previousPerson.person_id;
+								requestObject.renewal_date = trim(vacancyDate.value);
+								break;
+d254 3
+a256 3
+							
+							if (renewalRadioButton.checked)
+							{
+d260 1
+a260 1
+							}
+d267 2
+a268 1
+                (graduationRadioButton.checked ? " graduate?" : (departureRadioButton.checked ? " leave Queens College?" : " resign?"));
+d372 4
+a375 1
+                  if (Date.parse(electionDate.value) < Date.parse('January 1, 2009')) throw new Error("Election date is not valid");
+d378 2
+a379 1
+                    confirmMsg += thisPerson.name + " (" + thisPerson.person_id + (thisPerson.is_faculty ? " (faculty)" : "") +")";
+d385 6
+a390 3
+							else if (renewalRadioButton.checked)
+							{
+                if (Date.parse(vacancyDate.value) < Date.parse('January 1, 2009')) throw new Error("Application date is not valid.");
+d393 1
+a393 1
+							}
+d396 6
+a401 2
+                if (Date.parse(vacancyDate.value) < Date.parse('January 1, 2009')) throw new Error("Vacancy date is not valid.");
+                eventType = graduationRadioButton.checked ? 'graduation' : (departureRadioButton.checked ? 'departure' : 'resignation');
+d421 1
+a421 1
+                        (personText.value !== "" ? "('"+personText.value+"') ":"") + "named to act as pro tem replacement.");
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+//  $Id$
+d6 4
+a9 1
+ *  $Log$
+d35 1
+d86 3
+d125 4
+d249 1
+a249 1
+              //  Seat is currently occupied: either vacate it or name a pro tem holder.
+d251 7
+d377 6
+d613 1
+d643 1
+@

@@ -1,0 +1,187 @@
+head	1.4;
+access;
+symbols;
+locks
+	vickery:1.4; strict;
+comment	@# @;
+
+
+1.4
+date	2010.01.02.06.23.47;	author vickery;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2009.12.29.05.22.38;	author vickery;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2009.12.28.05.44.58;	author vickery;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2009.11.24.06.00.09;	author vickery;	state Exp;
+branches;
+next	;
+
+
+desc
+@Utility functions, such as looking people up in the database.
+@
+
+
+1.4
+log
+@Added clarifying parens to an if statement.
+@
+text
+@<?php
+//  $Id: utilities.php,v 1.3 2009/12/29 05:22:38 vickery Exp vickery $
+/*
+ *    Gets information about a person and initializes two associative arrays:
+ *      $_SESSION['person'] Everything from the people table for the person;
+ *      or not set if the person is not there.
+ *      $_SESSION['committees'] Committees the person is a member/chair of.
+ *    Also sets $_SESSION['IS_NOMINATING'] if the person is a member of the
+ *    Nominating Committee.
+ *
+ *    $Log: utilities.php,v $
+ *    Revision 1.3  2009/12/29 05:22:38  vickery
+ *    Whitespace and bug fixes.
+ *
+ *    Revision 1.2  2009/12/28 05:44:58  vickery
+ *    Changed global name of db connection; changed session variable
+ *    name to IS_NOMINATING.
+ *
+ *    Revision 1.1  2009/11/24 06:00:09  vickery
+ *    Initial revision
+ *
+ */
+  function lookup_user($email, $password)
+  {
+    global $senate_db;
+    
+    $_SESSION['IS_NOMINATING'] = false;
+    if (isset($_SESSION['person'])) unset($_SESSION['person']);
+    if (!preg_match("/^\s*[\w\.\-]+@@[\w\.\-]+\s*$/", $email))
+    {
+      return;
+    }
+    $sha1 = sha1($password);
+    $query =  "SELECT * FROM people "
+             ."  WHERE (qc_email ~* '$email' OR alternate_email ~* '$email') AND "
+             ."  (password is null OR password='$sha1')";
+    $result = pg_query($senate_db, $query);
+    switch (pg_num_rows($result))
+    {
+      case 0:
+          break;
+      case 1:
+          $_SESSION['person'] = pg_fetch_assoc($result);
+          break;
+      default:
+          die(pg_num_rows($result) . " matches returned from email lookup.");
+          break;
+    }
+    $_SESSION['committees'] = array();
+    if (isset($_SESSION['person']))
+    {
+      $id = $_SESSION['person']['id'];
+      $query = "SELECT abbreviation, chair_id FROM committees, seats "
+              ."  WHERE person_id = '$id' AND committees.id = committee_id AND is_current";
+      $result = pg_query($senate_db, $query);
+      $num_rows = pg_num_rows($result);
+      while ($row = pg_fetch_assoc($result))
+      {
+        $_SESSION['committees'][] = array( 'name' =>    $row['abbreviation'],
+                                           'is_chair' => ($row['chair_id'] === $_SESSION['person']['id']) ? true : false
+                                         );
+        if ($row['abbreviation'] === "Nominating") $_SESSION['IS_NOMINATING'] = true;
+      }
+    }
+  }
+?>
+@
+
+
+1.3
+log
+@Whitespace and bug fixes.
+@
+text
+@d2 1
+a2 1
+//  $Id: utilities.php,v 1.2 2009/12/28 05:44:58 vickery Exp vickery $
+d12 3
+d36 1
+a36 1
+             ."  password is null OR password='$sha1'";
+@
+
+
+1.2
+log
+@Changed global name of db connection; changed session variable
+name to IS_NOMINATING.
+@
+text
+@d2 1
+a2 1
+//  $Id: utilities.php,v 1.1 2009/11/24 06:00:09 vickery Exp vickery $
+d5 2
+a6 2
+ *      $_SESSION['person'] Everything from the people table for the person
+ *      or null if the person is not there.
+d8 2
+a9 2
+ *		Also sets $_SESSION['IS_NOMCOM'] if the person is a member of the
+ *		Nominating Committee.
+d12 4
+d23 7
+a29 7
+		
+		$_SESSION['IS_NOMINATING'] = false;
+		if (!preg_match("/^\s*[\w\.\-]+@@[\w\.\-]+\s*$/", $email))
+		{
+			$_SESSION['person'] = null;
+			return;
+		}
+a37 1
+          $_SESSION['person'] = NULL;
+d47 1
+a47 1
+    if (is_array($_SESSION['person']))
+d59 1
+a59 1
+				$_SESSION['IS_NOMINATING'] = ($row['abbreviation'] === "Nominating");
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d2 1
+a2 1
+//  $Id$
+d8 6
+a14 1
+ *    $Log$
+d18 3
+a20 3
+    global $db_conn;
+
+		unset($_SESSION['IS_NOMINATING']);
+d30 1
+a30 1
+    $result = pg_query($db_conn, $query);
+d49 1
+a49 1
+      $result = pg_query($db_conn, $query);
+d56 1
+a56 1
+				if ($row['abbreviation'] === "Nominating") $_SESSION['IS_NOMINATING'] = true;
+@

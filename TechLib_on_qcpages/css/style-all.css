@@ -1,0 +1,23 @@
+html, body  { background: #99ccff; }
+h1          { text-align: center;  }
+h2.subtitle { text-align: center;  }
+p           { margin-left: 1em; margin-right: 2em; }
+p.indent    { margin-left: 3em; }
+p.footer    { text-align: center; font-size: 0.5em; }
+div#header-logo {
+  float: left;
+}
+div#header-text {
+  padding-top: 0.4em;
+  font-size: 2em;
+}
+#header-logo > img  { height: 6em; width: 12em; padding: 1em;}
+#header-text > p    { margin:0; padding-left: 2em; }
+
+div.whitebox {
+  background:white;
+  border:solid 1px blue;
+  margin:1em;
+  padding:1em;
+  -moz-border-radius: 10pt;
+}

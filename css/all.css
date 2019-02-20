@@ -1,0 +1,62 @@
+/*  all.css
+ *  ------------------------------------------
+ *  Style for AcademicSenate committee holder.
+ */
+
+html, body {
+  margin:0;
+  padding:1em;
+  background-color:#fff8e0;
+  color:rgb(70,137,102);
+  font-family:Geneva, Arial, Helvetica, sans-serif;
+  font-size:95%;
+  }
+
+h1 {
+	text-align:center;
+  font-size:1.8em;
+  overflow:hidden;
+  }
+
+h2 {
+	font-size:1.3em;
+  }
+p {
+	font-size:1.1em;
+  }
+
+dl {
+  font-size:1.2em;
+	background-color:#fff;
+  color:$6f6;
+  border:1px solid green;
+  width:60%;
+  margin:2em auto;
+  padding:1em;
+  overflow:hidden;
+  }
+
+dt{
+	margin-top:1em;
+  }
+dd {
+	margin-top:0.5em;
+  text-align:left;
+  line-height:1.8;
+  padding-right:1em;
+  overflow:hidden;
+  }
+
+a, a:visited {
+	padding:0 0.5em;
+	background-color:#fff;
+  color:rgb(70,137,102);
+  }
+a:hover {
+	text-decoration:none;
+  color:#fff;
+  background-color:rgb(70,137,102);
+  }
+dt a, dt a:visited {
+	padding: 0.5em;
+  }

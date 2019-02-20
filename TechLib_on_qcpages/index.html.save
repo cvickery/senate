@@ -1,0 +1,76 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+   "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <title>Academic Senate Technology and Library Committee</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <link rel="stylesheet" 
+        type="text/css" 
+        href="css/style-all.css" />
+  <link rel="stylesheet"
+        type="text/css"
+        href="css/style-screen.css"
+        media="screen" />
+  <style type="text/css">
+    table.header { border: none; width: 100%; }
+    td.logo {width: 20%; text-align: center; }
+  </style>
+</head>
+<body>
+<div id="header">
+  <div id="header-logo">
+    <img src="TechLib-200x91-JG.jpg" alt="" />
+  </div>
+  <div id="header-text">
+    <p><strong>Technology and Library Committee</strong></p>
+    <p><em>Academic Senate</em></p>
+    <p><em>Queens College of CUNY</em></p>
+  </div>
+</div>
+
+<div id="body">
+
+  <div class="whitebox">
+  <h2>Technology Fee Task Force Application</h2>
+
+    <p>One of the functions of the Academic Senate's Technology and
+    Library Committee is to recommend faculty and students to serve on
+    the college's Technology Fee Task Force.  The Technology Fee Task
+    Force is responsible for deciding how to spend the college's share
+    of the university's technology fee, currently $75 per full-time
+    student.</p>
+
+    <p>Click below if you would like to submit an application to be on
+    the task force.</p>
+
+    <p class="indent"><a href="./Application.html">Tech Fee Task Force
+    Application</a></p>
+
+  <h2>Participate</h2>
+
+    <p>We invite you to use our open forum to discuss technology and
+    library matters at Queens College.</p>
+
+    <p class="indent">
+      <a href="http://babbage.cs.qc.edu/Fora/TechLib">Open
+      Discussion Forum</a>
+    </p>
+
+    <p>Minutes of the committee's meetings and copies of reports we
+    have submitted to the Academic Senate are available here:</p>
+
+    <p class="indent">
+      <a href="Minutes">Minutes</a>
+    </p>
+    <p class="indent">
+      <a href="Reports">Reports</a>
+    </p>
+
+</div>
+
+<hr>
+  <p class="footer">Validate: <a
+    href="http://validator.w3.org/check/referer">HTML</a>
+  </p>
+
+</body></html>

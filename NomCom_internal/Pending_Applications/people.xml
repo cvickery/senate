@@ -1,0 +1,305 @@
+<people>
+  <person>
+      <person_name person-type="faculty">Elena Vesselinov</person_name>
+      <person_division department="Sociology">Social Sciences</person_division>
+      <person_campus-address>252 Powdermaker Hall, Queens College</person_campus-address>
+      <person_telephone>718 977-2809</person_telephone>
+      <person_email>elena.vesselinov@qc.cuny.edu</person_email>
+  </person>
+
+  <person>
+      <person_name person-type="faculty">GERASIMUS KATSAN</person_name>
+      <person_division department="European Languages and Literature">Arts and Humanities</person_division>
+      <person_campus-address>King Hall 209A</person_campus-address>
+      <person_telephone>718 997-5581</person_telephone>
+      <person_email>gerasimus.katsan@qc.cuny.edu</person_email>
+  </person>
+
+  <person>
+      <person_name person-type="undergraduate_student">Rachel Stern</person_name>
+      <person_division department="Psychology">Mathematics and Natural Sciences</person_division>
+      <person_id-no.>0313</person_id-no.>
+      <person_graduation-date>2012-06</person_graduation-date>
+      <person_mailing-address>The Summit at Queens College, 64-80 Kissena Blvd</person_mailing-address>
+      <person_address_line_2>Flushing, NY 11367</person_address_line_2>
+      <person_telephone>917 459-8092</person_telephone>
+      <person_email>RachelMStern@aol.com</person_email>
+  </person>
+
+  <person>
+      <person_name person-type="faculty">Kenneth Lord</person_name>
+      <person_division department="Computer Science">Mathematics and Natural Sciences</person_division>
+      <person_campus-address>NSB A120</person_campus-address>
+      <person_telephone>73485</person_telephone>
+      <person_email>kenneth.lord@qc.cuny.edu</person_email>
+  </person>
+
+  <person>
+      <person_name person-type="undergraduate_student">Andrew DeMasters</person_name>
+      <person_division department="Political Science">Social Sciences</person_division>
+      <person_id-no.>6665</person_id-no.>
+      <person_graduation-date>2012-06</person_graduation-date>
+      <person_mailing-address>840 Bromton Drive</person_mailing-address>
+      <person_address_line_2>Westbury, NY 11590</person_address_line_2>
+      <person_telephone>516 644-6374</person_telephone>
+      <person_email>redmagician26@aol.com</person_email>
+  </person>
+
+  <person>
+      <person_name person-type="faculty">Michael J. Miller</person_name>
+      <person_division department="Library">Arts and Humanities</person_division>
+      <person_campus-address>BRL Rm. 327</person_campus-address>
+      <person_telephone>x73761</person_telephone>
+      <person_email>michael.miller@qc.cuny.edu</person_email>
+  </person>
+
+  <person>
+      <person_name person-type="faculty">Magnus O. Bassey</person_name>
+      <person_division department="Secondary Ed">Education</person_division>
+      <person_campus-address>150N Powdermaker Hall</person_campus-address>
+      <person_telephone>718 997-5335</person_telephone>
+      <person_email>magnus.bassey@qc.cuny.edu</person_email>
+  </person>
+
+  <person>
+      <person_name person-type="undergraduate_student">Delacia Gittens</person_name>
+      <person_division department="Political Science">Social Sciences</person_division>
+      <person_id-no.>5679</person_id-no.>
+      <person_graduation-date>2012-06</person_graduation-date>
+      <person_mailing-address>146-17 107 Avenue</person_mailing-address>
+      <person_address_line_2>jamiaca  11435</person_address_line_2>
+      <person_telephone>917 450-6556</person_telephone>
+      <person_email>dgittens@msn.com</person_email>
+  </person>
+
+  <person>
+      <person_name person-type="undergraduate_student">Joseph Perna</person_name>
+      <person_division department="Political Science">Social Sciences</person_division>
+      <person_id-no.>5191</person_id-no.>
+      <person_graduation-date>2012-06</person_graduation-date>
+      <person_mailing-address>180 Maspeth Ave</person_mailing-address>
+      <person_address_line_2>Brooklyn, NY  11211</person_address_line_2>
+      <person_telephone>973 805-0357</person_telephone>
+      <person_email>jperna90@gmail.com</person_email>
+  </person>
+
+  <person>
+      <person_name person-type="undergraduate_student">Jurgen Sula</person_name>
+      <person_division department="Biology">Mathematics and Natural Sciences</person_division>
+      <person_id-no.>1676</person_id-no.>
+      <person_graduation-date>2013-06</person_graduation-date>
+      <person_mailing-address>220 20 67th Avenue</person_mailing-address>
+      <person_address_line_2>Oakland Gardens, NY  11364</person_address_line_2>
+      <person_telephone>516 263-7192</person_telephone>
+      <person_email>Jurgensula@gmail.com</person_email>
+  </person>
+
+  <person>
+      <person_name person-type="undergraduate_student">Karen Rechany</person_name>
+      <person_division department="Political Science">Social Sciences</person_division>
+      <person_id-no.>3447</person_id-no.>
+      <person_graduation-date>2013-06</person_graduation-date>
+      <person_mailing-address>75-38 113st apt 2</person_mailing-address>
+      <person_address_line_2>forest hills, ny  11375</person_address_line_2>
+      <person_telephone>646 894-5566</person_telephone>
+      <person_email>redmagician26@aol.com</person_email>
+  </person>
+
+  <person>
+      <person_name person-type="faculty">Line Augustin Saint-Hilaire</person_name>
+      <person_division department="Elementary and Early Childhood Education">Education</person_division>
+      <person_campus-address>65-30 Kissena Blvd, Flushing NY 11367</person_campus-address>
+      <person_telephone>718 997-5348</person_telephone>
+      <person_email>Line.Augustin@qc.cuny.edu</person_email>
+  </person>
+
+  <person>
+      <person_name person-type="undergraduate_student">Sheril Koruthu</person_name>
+      <person_division department="Biology">Mathematics and Natural Sciences</person_division>
+      <person_id-no.>1985</person_id-no.>
+      <person_graduation-date>2014-06</person_graduation-date>
+      <person_mailing-address>84-15 259th St</person_mailing-address>
+      <person_address_line_2>Floral Park, NY  11001</person_address_line_2>
+      <person_telephone>516 469-5505</person_telephone>
+      <person_email>sheril.koruthu@gmail.com</person_email>
+  </person>
+
+  <person>
+      <person_name person-type="undergraduate_student">Alejandra Villanueva</person_name>
+      <person_division department="Bachelors of Business Administration">Social Sciences</person_division>
+      <person_id-no.>5498</person_id-no.>
+      <person_graduation-date>2013-06</person_graduation-date>
+      <person_mailing-address>9523 243rd St.</person_mailing-address>
+      <person_address_line_2>Floral Park, NY  11001</person_address_line_2>
+      <person_telephone>516 526-6158</person_telephone>
+      <person_email>VillanuevaA91@gmail.com</person_email>
+  </person>
+
+  <person>
+      <person_name person-type="undergraduate_student">Charlie Wohlberg</person_name>
+      <person_division department="Political Science">Social Sciences</person_division>
+      <person_id-no.>4982</person_id-no.>
+      <person_graduation-date>2012-06</person_graduation-date>
+      <person_mailing-address>124 Franklin Avenue</person_mailing-address>
+      <person_address_line_2>Yonkers, NY  10705</person_address_line_2>
+      <person_telephone>914 261-1557</person_telephone>
+      <person_email>charlie.wohlberg@gmail.com</person_email>
+  </person>
+
+  <person>
+      <person_name person-type="undergraduate_student">James P. Robinson</person_name>
+      <person_division department="Political Science">Social Sciences</person_division>
+      <person_id-no.>6416</person_id-no.>
+      <person_graduation-date>2012-06</person_graduation-date>
+      <person_mailing-address>68-07 Little Neck Parkway</person_mailing-address>
+      <person_address_line_2>Glen Oaks, New York  11004</person_address_line_2>
+      <person_telephone>917 578-3384</person_telephone>
+      <person_email>jrobinson102@qc.cuny.edu</person_email>
+  </person>
+
+  <person>
+      <person_name person-type="undergraduate_student">Janine Gatti</person_name>
+      <person_division department="Economics">Social Sciences</person_division>
+      <person_id-no.>6893</person_id-no.>
+      <person_graduation-date>2012-06</person_graduation-date>
+      <person_mailing-address>31 Perry Avenue</person_mailing-address>
+      <person_address_line_2>Bayville, NY  11709</person_address_line_2>
+      <person_telephone>516 359-6951</person_telephone>
+      <person_email>Jgatti1990@gmail.com</person_email>
+  </person>
+
+  <person>
+      <person_name person-type="undergraduate_student">Sixto I. Arias</person_name>
+      <person_division department="Psychology">Mathematics and Natural Sciences</person_division>
+      <person_id-no.>9877</person_id-no.>
+      <person_graduation-date>2013-06</person_graduation-date>
+      <person_mailing-address>132-40 Sanford Ave. apt 2M</person_mailing-address>
+      <person_address_line_2>Flushing, NY 11355</person_address_line_2>
+      <person_telephone>631 804-1594</person_telephone>
+      <person_email>sixto.arias@yahoo.com</person_email>
+  </person>
+
+  <person>
+      <person_name person-type="undergraduate_student">Arnera Bhawanie</person_name>
+      <person_division department="Undeclared">none</person_division>
+      <person_id-no.>1675</person_id-no.>
+      <person_graduation-date>2014-06</person_graduation-date>
+      <person_mailing-address>106-10 Remington St</person_mailing-address>
+      <person_address_line_2>Jamaica, NY 11435</person_address_line_2>
+      <person_telephone>347 233-1647</person_telephone>
+      <person_email>Nerii17@aol.com</person_email>
+  </person>
+
+  <person>
+      <person_name person-type="graduate_student">Karran Jainarain</person_name>
+      <person_division department="Elementary and Early Childhood Education">Education</person_division>
+      <person_id-no.>2359</person_id-no.>
+      <person_graduation-date>2012-06</person_graduation-date>
+      <person_mailing-address>101-50 133 Street</person_mailing-address>
+      <person_address_line_2>Richmod Hill, NY 11419</person_address_line_2>
+      <person_telephone>917 749-3507</person_telephone>
+      <person_email>Kjainarain100@qc.cuny.edu</person_email>
+  </person>
+
+  <person>
+      <person_name person-type="undergraduate_student">Melissa Prusak</person_name>
+      <person_division department="Biology">Mathematics and Natural Sciences</person_division>
+      <person_id-no.>8709</person_id-no.>
+      <person_graduation-date>2013-06</person_graduation-date>
+      <person_mailing-address>252-41 63 Ave.</person_mailing-address>
+      <person_address_line_2>Little Neck, NY 11362</person_address_line_2>
+      <person_telephone>718 666-8838</person_telephone>
+      <person_email>melissa.prusak@gmail.com</person_email>
+  </person>
+
+  <person>
+      <person_name person-type="undergraduate_student">Benjamin Galang</person_name>
+      <person_division department="Undeclared">none</person_division>
+      <person_id-no.>0619</person_id-no.>
+      <person_graduation-date>2014-06</person_graduation-date>
+      <person_mailing-address>90-62 201 St</person_mailing-address>
+      <person_address_line_2>Hollis, NY 11423</person_address_line_2>
+      <person_telephone>347 964-4767</person_telephone>
+      <person_email>benjamingalang@gmail.com</person_email>
+  </person>
+
+  <person>
+      <person_name person-type="undergraduate_student">Elnora Olvina</person_name>
+      <person_division department="Undeclared">none</person_division>
+      <person_id-no.>0185</person_id-no.>
+      <person_graduation-date>2013-06</person_graduation-date>
+      <person_mailing-address>1139 Ashley Drive</person_mailing-address>
+      <person_address_line_2>Valley Stream, NY 11580</person_address_line_2>
+      <person_telephone>516 287-0899</person_telephone>
+      <person_email>eolvina100@qc.cuny.edu</person_email>
+  </person>
+
+  <person>
+      <person_name person-type="undergraduate_student">Zachary Handler</person_name>
+      <person_division department="Economics">Social Sciences</person_division>
+      <person_id-no.>0941</person_id-no.>
+      <person_graduation-date>2012-06</person_graduation-date>
+      <person_mailing-address>193-21 Nero Avenue</person_mailing-address>
+      <person_address_line_2>Hollis, NY 11423</person_address_line_2>
+      <person_telephone>917 405-9105</person_telephone>
+      <person_email>zhandler100@gmail.com</person_email>
+  </person>
+
+  <person>
+      <person_name person-type="undergraduate_student">Anthony Angulo</person_name>
+      <person_division department="Latin American Area Studies">Social Sciences</person_division>
+      <person_id-no.>8322</person_id-no.>
+      <person_graduation-date>2011-06</person_graduation-date>
+      <person_mailing-address>60 E 17th Street Apt. AA</person_mailing-address>
+      <person_address_line_2>Brooklyn, NY 11226</person_address_line_2>
+      <person_telephone>347 722-3540</person_telephone>
+      <person_email>tonyangu@gmail.com</person_email>
+  </person>
+
+  <person>
+      <person_name person-type="undergraduate_student">Lais Payano</person_name>
+      <person_division department="Urban Studies">Social Sciences</person_division>
+      <person_id-no.>5508</person_id-no.>
+      <person_graduation-date>2011-06</person_graduation-date>
+      <person_mailing-address>9125 184 St</person_mailing-address>
+      <person_address_line_2>Hollis, NY 11432</person_address_line_2>
+      <person_telephone>718 413-9998</person_telephone>
+      <person_email>Lpayano101@qc.cuny.edu</person_email>
+  </person>
+
+  <person>
+      <person_name person-type="undergraduate_student">Diego Palaguachi</person_name>
+      <person_division department="Anthropology">Social Sciences</person_division>
+      <person_id-no.>6652</person_id-no.>
+      <person_graduation-date>2011-06</person_graduation-date>
+      <person_mailing-address>6836 108 St</person_mailing-address>
+      <person_address_line_2>Forest Hills, New York  11375</person_address_line_2>
+      <person_telephone>347 294-5920</person_telephone>
+      <person_email>dpalaguachi100@qc.cuny.edu</person_email>
+  </person>
+
+  <person>
+      <person_name person-type="faculty">Frank Warren</person_name>
+      <person_division department="History">Social Sciences</person_division>
+      <person_campus-address>Powdermaker Hall352A</person_campus-address>
+      <person_telephone>718 997-5351</person_telephone>
+      <person_email>frank.warren@qc.cuny.edu</person_email>
+  </person>
+
+  <person>
+      <person_name person-type="faculty">Irma Llorens</person_name>
+      <person_division department="Hispanic Languages and Literature">Arts and Humanities</person_division>
+      <person_campus-address>243 Kiely Hall, 65-30 Kissena Blvd., Flushing, NY 11367-1597</person_campus-address>
+      <person_telephone>718 997-5624</person_telephone>
+      <person_email>Irma.Llorens@qc.cuny.edu</person_email>
+  </person>
+
+  <person>
+      <person_name person-type="faculty">David H. Richter</person_name>
+      <person_division department="English">Arts and Humanities</person_division>
+      <person_campus-address>Klapper 639</person_campus-address>
+      <person_telephone>718 997-4667, 317-302-9060</person_telephone>
+      <person_email>david.richter@qc.cuny.edu</person_email>
+  </person>
+
+</people>

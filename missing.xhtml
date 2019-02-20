@@ -1,0 +1,55 @@
+<?php
+  header("Vary: Accept");
+  if (  array_key_exists("HTTP_ACCEPT", $_SERVER) &&
+        stristr($_SERVER["HTTP_ACCEPT"], "application/xhtml+xml") ||
+        stristr($_SERVER["HTTP_USER_AGENT"], "W3C_Validator")
+      )
+  {
+    header("Content-type: application/xhtml+xml");
+    print("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+  }
+  else
+  {
+    header("Content-type: text/html; charset=utf-8");
+  }
+  $protocol = 'http';
+  if ( isset($_SERVER['HTTPS']) ) $protocol = 'https';
+ ?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+  <head>
+    <title>404</title>
+    <style type="text/css">
+     html, body {
+      margin:0; padding:0;
+      font-family:sans-serif;
+      background-color:#444;
+      color:white;
+      }
+    body {
+      max-width:600px;
+      background-color:#666;
+      margin:1em auto;
+      padding:0 1em;
+      border:2px solid red;
+			border-radius:1em;
+      }
+    a {
+      background-color: #666;
+      color:white;
+      padding:0.5em;
+      }
+    a:hover {
+      background-color:black;
+      text-decoration:none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Missing Web Page</h1>
+    <p>
+      So sorry, but <?php echo "$protocol://{$_SERVER['SERVER_NAME']}{$_SERVER['REQUEST_URI']}";?> does not exist.
+    </p>
+    <p><a href="/">Senate Home Page</a></p>
+  </body>
+</html>

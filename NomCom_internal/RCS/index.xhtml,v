@@ -1,0 +1,494 @@
+head	1.5;
+access;
+symbols;
+locks
+	vickery:1.5; strict;
+comment	@# @;
+
+
+1.5
+date	2010.01.31.15.10.14;	author vickery;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2010.01.16.19.26.19;	author vickery;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2009.12.31.22.07.16;	author vickery;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2009.12.29.05.26.22;	author vickery;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2009.11.24.06.06.02;	author vickery;	state Exp;
+branches;
+next	;
+
+
+desc
+@Home page for the Nominating Committee's internal site.
+Handles logging in and displays a list of links to other
+pages in the internal site.
+@
+
+
+1.5
+log
+@Link to current applications to process PDF updated.
+@
+text
+@<?php
+//  $Id: index.xhtml,v 1.4 2010/01/16 19:26:19 vickery Exp vickery $
+/*
+ *    The home page for the Nominating Committee’s internal site.
+ *    Forces an HTTPS connection, and verifies the user is logged in and
+ *    is a member of the Nominating Committee. If so, provides a menu
+ *    for accessing the other parts of the site. If not, redirects to
+ *    the logon form.
+ *
+ *  $Log: index.xhtml,v $
+ *  Revision 1.4  2010/01/16 19:26:19  vickery
+ *  Updated nav list. Removed footer with links to validators because
+ *  they don’t know how to log in.
+ *
+ *  Revision 1.3  2009/12/31 22:07:16  vickery
+ *  Bug fix in user verification.
+ *  Reformatted footer.
+ *
+ *  Revision 1.2  2009/12/29 05:26:22  vickery
+ *  Implement login restrictions.
+ *  Only NomCom members have basic access; db administrators have access
+ *  to management pages in addition.
+ *
+ *  Revision 1.1  2009/11/24 06:06:02  vickery
+ *  Initial revision
+ *
+ *
+ */
+  session_start();
+  //  Force HTTPS connection if not already in place.
+  if (! isset($_SERVER['HTTPS']))
+  {
+    header("Location: https://{$_SERVER['SERVER_NAME']}{$_SERVER['REQUEST_URI']}");
+    exit;
+  }
+  //  Verify the user is a member of the nominating committee or a db administrator;
+  //  redirect to login if not.
+  if ( !( (isset($_SESSION['IS_NOMINATING']) && $_SESSION['IS_NOMINATING']) ||
+          (isset($_SESSION['person']) && ($_SESSION['person']['is_db_admin'] === 't')) ) )
+  {
+    header("Location: scripts/do_logoff.php");
+    exit;
+  }
+
+  header("Vary: Accept");
+  $content_type = "";
+  if (  array_key_exists("HTTP_ACCEPT", $_SERVER) &&
+        stristr($_SERVER["HTTP_ACCEPT"], "application/xhtml+xml") ||
+        stristr($_SERVER["HTTP_USER_AGENT"], "W3C_Validator")
+      )
+  {
+    $content_type = "application/xhtml_xml";
+    header("Content-type: application/xhtml+xml");
+    header("Last-Modified: "
+                    .gmdate('r',filemtime($_SERVER['SCRIPT_FILENAME'])));
+    print("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+  }
+  else
+  {
+    $content_type = "text/html";
+    header("Content-type: text/html; charset=utf-8");
+  }
+ ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+  "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="<?php echo $content_type; ?>; charset=UTF-8" />
+    <title>Nominating Committee Internal Web Site</title>
+    <link rel="shortcut icon" href="../images/AS.ico" />
+    <link rel="stylesheet"
+          type="text/css"
+          media="all"
+          href="css/nomcom-internal.css"
+    />
+  </head>
+
+  <body>
+    <div id="header">
+      <img src="images/AS_Gavel.png" alt="" />
+      <h1>Nominating Committee</h1>
+      <h2>Internal Web Site</h2>
+    </div>
+    <div id="content" class="whitebox">
+
+      <div id="greeting">
+      <?php echo
+        "<h2>Welcome {$_SESSION['person']['first_name']} {$_SESSION['person']['last_name']}.</h2>\n";
+       ?>
+        <p><a href="scripts/do_logoff.php">Log Off ...</a></p>
+      </div>
+      <h2>Internal Information</h2>
+      <ul class="nav-list">
+        <li>
+          <a href="2010-02-11_Applications.pdf">Summary chart of current applications (PDF)</a>
+        </li>
+        <li>
+          <a href="Pending_Applications">Copies of current application forms</a>
+        </li>
+        <li>
+          <a href="Old_Applications">Archive of old application forms</a>
+        </li>
+<?php if ($_SESSION['person']['is_db_admin'] === 't') echo <<<EOT
+        <li>
+          <a href="manage_seats.xhtml">Manage Seats (elections, resignations, chair changes, etc.)</a>
+        </li>
+        <li>
+          <a href="manage_people.xhtml">Manage People (display/modify info about people)</a>
+        </li>
+        <li>
+          <a href="rollover_seats.xhtml">Rollover Seats (when terms expire)</a>
+        </li>
+EOT;
+?>
+      </ul>
+      <h2>Public Web Site</h2>
+      <ul class="nav-list">
+        <li>
+          <a href="../NomCom">Public Web Site Home Page</a>
+        </li>
+        <li>
+          <a href="..//NomCom/committee_seats.xhtml">Current Committee Rosters</a>
+        </li>
+        <li>
+          <a href="../NomCom/Policies_Procedures.pdf">Policies and Procedures</a>
+        </li>
+        <li>
+          <a href="../NomCom/Minutes">Meeting Minutes</a>
+        </li>
+        <li>
+          <a href="..//NomCom/Reports">Reports to the Senate</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="footer">
+      <em>
+        Last updated <?php echo date("Y-m-d", filemtime($_SERVER['SCRIPT_FILENAME'])); ?>.
+      </em>
+    </div>
+  </body>
+</html>
+@
+
+
+1.4
+log
+@Updated nav list. Removed footer with links to validators because
+they don't know how to log in.
+@
+text
+@d2 1
+a2 1
+//  $Id: index.xhtml,v 1.3 2009/12/31 22:07:16 vickery Exp vickery $
+d5 4
+a8 5
+ *    Forces an HTTPS connection, and verifies the user is logged
+ *    in and is 
+ *    a member of the Nominating Committee. If so, provides a menu for
+ *    accessing the other parts of the site. If not, redirects to the
+ *    logon form.
+d11 4
+d38 1
+a38 1
+  if ( !( (isset($_SESSION['IS_NOMINATING']) && $_SESSION['IS_NOMINATING']) || 
+d77 1
+a77 1
+  
+d85 1
+a85 1
+  
+d95 1
+a95 1
+          <a href="2009-12-03_Applications.pdf">Summary chart of current applications (PDF)</a>
+d135 1
+a135 1
+  
+@
+
+
+1.3
+log
+@Bug fix in user verification.
+Reformatted footer.
+@
+text
+@d2 1
+a2 1
+//  $Id: index.xhtml,v 1.2 2009/12/29 05:26:22 vickery Exp vickery $
+d12 4
+d34 1
+a34 1
+  //	redirect to login if not.
+d73 7
+a79 15
+</head>
+
+<body>
+  <div id="header">
+    <img src="images/AS_Gavel.png" alt="" />
+    <h1>Nominating Committee</h1>
+    <h2>Internal Web Site</h2>
+  </div>
+  <div id="content" class="whitebox">
+
+    <div id="greeting">
+    <?php echo
+      "<h2>Welcome {$_SESSION['person']['first_name']} {$_SESSION['person']['last_name']}.</h2>\n";
+     ?>
+      <p><a href="scripts/do_logoff.php">Log Off ...</a></p>
+d81 19
+a99 11
+    <h2>Internal Information</h2>
+    <ul class="nav-list">
+      <li>
+        <a href="2009-12-03_Applications.pdf">Summary chart of current applications (PDF)</a>
+      </li>
+      <li>
+        <a href="Pending_Applications">Copies of current application forms</a>
+      </li>
+      <li>
+        <a href="Old_Applications">Archive of old application forms</a>
+      </li>
+d101 9
+a109 9
+      <li>
+        <a href="manage_seats.xhtml">Manage Seats (elections, resignations, etc)</a>
+      </li>
+      <li>
+        <a href="manage_people.xhtml">Manage People (display/modify info about people)</a>
+      </li>
+      <li>
+        <a href="rollover_seats.xhtml">Rollover Seats (under development)</a>
+      </li>
+d112 22
+a133 24
+    </ul>
+    <h2>Public Web Site</h2>
+    <ul class="nav-list">
+      <li>
+        <a href="../NomCom">Public Web Site Home Page</a>
+      </li>
+      <li>
+        <a href="..//NomCom/committee_seats.xhtml">Current Committee Rosters</a>
+      </li>
+      <li>
+        <a href="../NomCom/Policies_Procedures.pdf">Policies and Procedures</a>
+      </li>
+      <li>
+        <a href="../NomCom/Minutes">Meeting Minutes</a>
+      </li>
+      <li>
+        <a href="..//NomCom/Reports">Reports to the Senate</a>
+      </li>
+    </ul>
+  </div>
+
+  <div id="footer">
+      <a href="http://validator.w3.org/check?uri=referer">XHTML</a>&nbsp;-&nbsp;<a
+         href="http://jigsaw.w3.org/css-validator/check/referer">CSS</a>
+d135 1
+a135 1
+        Last updated <?php echo gmdate("Y-m-d", filemtime($_SERVER['SCRIPT_FILENAME'])); ?>.
+d137 2
+a138 2
+  </div>
+</body>
+@
+
+
+1.2
+log
+@Implement login restrictions.
+Only NomCom members have basic access; db administrators have access
+to management pages in addition.
+@
+text
+@d2 1
+a2 1
+//  $Id: index.xhtml,v 1.1 2009/11/24 06:06:02 vickery Exp vickery $
+d12 5
+d29 2
+a30 2
+  //  Verify the user is a member of the nominating committee; redirect to login
+  //  if not.
+d32 1
+a32 1
+          (isset($_SESSION['person']) && $_SESSION['person']['is_db_admin']) ) )
+a129 2
+  <hr />
+    <p class="links">
+d132 3
+a134 5
+    </p>
+    <p><em>Last updated
+      <?php echo gmdate("Y-m-d", filemtime($_SERVER['SCRIPT_FILENAME']));
+      ?>.</em>
+    </p>
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d2 1
+a2 1
+//	$Id$
+d4 10
+a13 5
+ *		The home page for the Nominating Committee's internal site.
+ *		Forces an HTTPS connection and displays a login form. Serves
+ *		as the action agent for the login form: verifies the user is
+ *    a member of the Nominating Committee and provides a menu for
+ *		accessing the other parts of the site.
+a14 1
+ *	$Log$
+d18 1
+d24 4
+a27 3
+require_once("scripts/utilities.php");
+
+  if (! isset($db_conn))
+d29 2
+a30 37
+    require("scripts/connect.php");
+    if (! isset($db_conn))
+    {
+      $date = date("c");
+      $errMsg = "The following error occurred at $date:\n";
+      $err = error_get_last();
+      $errMsg .= $err['message'] . "\n";
+      $errMsg = rawurlencode($errMsg);
+      $msg = <<<EOT
+      <!DOCTYPE HTML SYSTEM>
+      <html>
+        <head>
+          <title>Error</title>
+          <style type="text/css">
+            html,body {
+              margin:0;padding:0;background-color:#333;color:white;
+              }
+            body {
+              width:500px; margin:auto;
+              }
+            h1 {font-family:sans-serif; color:#F36; font-size:1.3em; }
+            a  {color:white;}
+          </style>
+        </head>
+        <body>
+          <h1>Unable to initialize</h1>
+          <p>
+            Please try again later. If this problem persists, please
+            <a href="mailto:vickery@@babbage.cs.qc.cuny.edu?subject=NomCom_internal%20access%20problem&amp;body=$errMsg">
+              contact the webmaster
+            </a>.
+          </p>
+        </body>
+      </html>
+EOT;
+    die($msg);
+    }
+d34 1
+d40 1
+d48 1
+a54 1
+
+d56 1
+a73 58
+<?php
+  if (isset($_POST['logoff']))
+  {
+    $level = error_reporting(0);
+    unset($_SESSION['person']);
+    unset($_SESSION['committees']);
+    unset($_SESSION['IS_NOMCOM']);
+    unset($_POST['email']);
+    unset($_POST['logoff']);
+    error_reporting($level);
+  }
+  $form_msg = "Access to this site is restricted to current members of the Nominating Committee.";
+
+  if (!isset($_SESSION['IS_NOMCOM']) && isset($_POST['email']))
+  {
+    lookup_user($_POST['email'], $_POST['password']);
+    if ($_SESSION['person'] === NULL)
+    {
+      $form_msg = "<span class=\"error-msg\">Email not found or password error.</span> ";
+    }
+    else if (! isset($_SESSION['IS_NOMCOM']))
+    {
+    	$form_msg = "<span class=\"error-msg\">$form_msg</span>";
+    }
+  }
+
+  //  Display login form if user is not logged in and a member of NomCom
+  //  -------------------------------------------------------------------
+  if (! (isset($_SESSION['person']) && (isset($_SESSION['IS_NOMCOM']) || $_SESSION['person']['is_db_admin'] === 't')))
+  {
+    echo<<<EOT
+    <form id="login" method="post" action="./">
+      <fieldset>
+        <p>
+          $form_msg
+          Enter your Queens College email address and Senate password to continue:
+        </p>
+        <legend>Login</legend>
+        <label for="email">Email:</label>
+        <input type="text" id="email" name="email" />
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" />
+        <button type="submit">Login</button>
+        <p class="footnote">
+          If you have not set up a password yet, just enter one above to create it. <span class="error-msg">(not implemented yet)</span>
+        </p>
+        <p class="footnote">
+          If you have a password but forgot it, fill in your email address above, and
+          check this box:<input type="checkbox" name="reset-password" />. Then click the Login button and follow the instructions
+          in the message that will be sent to your email address.
+        </p>
+      </fieldset>
+    </form>
+EOT;
+  }
+  else
+  {
+    echo <<<EOT
+d75 4
+a78 7
+      <h2>Welcome {$_SESSION['person']['first_name']} {$_SESSION['person']['last_name']}.</h2>
+      <form id="logoff" action="./" method="post">
+        <h2>
+          <input type="hidden" name="logoff" />
+          <button type="submit">Log off...</button>
+        </h2>
+      </form>
+d83 1
+a83 1
+        <a href="2009-12-03_Applications.pdf">Summary chart of current applicaions (PDF)</a>
+d91 1
+d96 3
+d101 2
+a121 3
+EOT;
+  }
+  ?>
+@

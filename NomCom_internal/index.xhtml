@@ -1,0 +1,145 @@
+<?php
+//  $Id: index.xhtml,v 1.5 2010/01/31 15:10:14 vickery Exp vickery $
+/*
+ *    The home page for the Nominating Committee’s internal site.
+ *    Forces an HTTPS connection, and verifies the user is logged in and
+ *    is a member of the Nominating Committee. If so, provides a menu
+ *    for accessing the other parts of the site. If not, redirects to
+ *    the logon form.
+ *
+ *  $Log: index.xhtml,v $
+ *  Revision 1.5  2010/01/31 15:10:14  vickery
+ *  Link to current applications to process PDF updated.
+ *
+ *  Revision 1.4  2010/01/16 19:26:19  vickery
+ *  Updated nav list. Removed footer with links to validators because
+ *  they don’t know how to log in.
+ *
+ *  Revision 1.3  2009/12/31 22:07:16  vickery
+ *  Bug fix in user verification.
+ *  Reformatted footer.
+ *
+ *  Revision 1.2  2009/12/29 05:26:22  vickery
+ *  Implement login restrictions.
+ *  Only NomCom members have basic access; db administrators have access
+ *  to management pages in addition.
+ *
+ *  Revision 1.1  2009/11/24 06:06:02  vickery
+ *  Initial revision
+ *
+ *
+ */
+  session_start();
+  //  Force HTTPS connection if not already in place.
+  if (! isset($_SERVER['HTTPS']))
+  {
+    header("Location: https://{$_SERVER['SERVER_NAME']}{$_SERVER['REQUEST_URI']}");
+    exit;
+  }
+  //  Verify the user is a member of the nominating committee or a db administrator;
+  //  redirect to login if not.
+  if ( !( (isset($_SESSION['IS_NOMINATING']) && $_SESSION['IS_NOMINATING']) ||
+          (isset($_SESSION['person']) && ($_SESSION['person']['is_db_admin'] === 't')) ) )
+  {
+    header("Location: scripts/do_logoff.php");
+    exit;
+  }
+
+  header("Vary: Accept");
+  $content_type = "";
+  if (  array_key_exists("HTTP_ACCEPT", $_SERVER) &&
+        stristr($_SERVER["HTTP_ACCEPT"], "application/xhtml+xml") ||
+        stristr($_SERVER["HTTP_USER_AGENT"], "W3C_Validator")
+      )
+  {
+    $content_type = "application/xhtml_xml";
+    header("Content-type: application/xhtml+xml");
+    header("Last-Modified: "
+                    .gmdate('r',filemtime($_SERVER['SCRIPT_FILENAME'])));
+    print("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+  }
+  else
+  {
+    $content_type = "text/html";
+    header("Content-type: text/html; charset=utf-8");
+  }
+ ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+  "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="<?php echo $content_type; ?>; charset=UTF-8" />
+    <title>Nominating Committee Internal Web Site</title>
+    <link rel="shortcut icon" href="../images/AS.ico" />
+    <link rel="stylesheet"
+          type="text/css"
+          media="all"
+          href="css/nomcom-internal.css"
+    />
+  </head>
+
+  <body>
+    <div id="header">
+      <img src="images/AS_Gavel.png" alt="" />
+      <h1>Nominating Committee</h1>
+      <h2>Internal Web Site</h2>
+    </div>
+    <div id="content" class="whitebox">
+
+      <div id="greeting">
+      <?php echo
+        "<h2>Welcome {$_SESSION['person']['first_name']} {$_SESSION['person']['last_name']}.</h2>\n";
+       ?>
+        <p><a href="scripts/do_logoff.php">Log Off ...</a></p>
+      </div>
+      <h2>Internal Information</h2>
+      <ul class="nav-list">
+        <li>
+          <a href="2010-02-11_Applications.pdf">Summary chart of current applications (PDF)</a>
+        </li>
+        <li>
+          <a href="Pending_Applications">Copies of current application forms</a>
+        </li>
+        <li>
+          <a href="Old_Applications">Archive of old application forms</a>
+        </li>
+<?php if ($_SESSION['person']['is_db_admin'] === 't') echo <<<EOT
+        <li>
+          <a href="manage_seats.xhtml">Manage Seats (elections, resignations, chair changes, etc.)</a>
+        </li>
+        <li>
+          <a href="manage_people.xhtml">Manage People (display/modify info about people)</a>
+        </li>
+        <li>
+          <a href="rollover_seats.xhtml">Rollover Seats (when terms expire)</a>
+        </li>
+EOT;
+?>
+      </ul>
+      <h2>Public Web Site</h2>
+      <ul class="nav-list">
+        <li>
+          <a href="../NomCom">Public Web Site Home Page</a>
+        </li>
+        <li>
+          <a href="..//NomCom/committee_seats.xhtml">Current Committee Rosters</a>
+        </li>
+        <li>
+          <a href="../NomCom/Policies_Procedures.pdf">Policies and Procedures</a>
+        </li>
+        <li>
+          <a href="../NomCom/Minutes">Meeting Minutes</a>
+        </li>
+        <li>
+          <a href="..//NomCom/Reports">Reports to the Senate</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="footer">
+      <em>
+        Last updated <?php echo date("Y-m-d", filemtime($_SERVER['SCRIPT_FILENAME'])); ?>.
+      </em>
+    </div>
+  </body>
+</html>

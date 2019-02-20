@@ -1,0 +1,37 @@
+2009-01-14
+
+  This is the virtual senate.qc.cuny.edu host on babbage.
+
+  TechLibCom_on_qcpages is a copy of the TechLib site on linaca; it is 700
+  because no one should access it from senate.qc.cuny.edu. The index page does a
+  redirect to senate.qc.cuny.edu/TechLib/index.html.
+
+  There is no TechLib_internal; everything is public.
+
+  There is a NomCom_internal in its own realm in babbage.cs.qc.cuny.edu with
+  digest authentication; minutes archive has been moved from there to here.
+
+  The .save directories are copies that can be deleted once everything has
+  been verified.
+
+2008-10-06
+
+  This is what people get from senate.qc.cuny.edu.
+
+    index.xhtml: Advisory directing people back to the real senate web site
+    with links to the public sites hosted locally for NomCom and TechLib.
+
+    NomCom: The public Nominating Committee web site, with the application form.
+    TechLib The public Technology and Library Committee site, with the TFTF
+    application form.
+
+    NomCom_Internal: Internal Nominating Committee site for current and pending
+    applications, Archive of reports to the Senate, etc.
+
+    TechLib_Internal: Internal Technology and Library Committee site: minutes
+    archive, reports archive ...
+
+
+    It is not clear that the internal sites need to exist, especially once the
+    application process is database driven instead of email.
+

@@ -1,0 +1,1112 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Application for Academic Senate Committee Membership</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Content-Script-Type" content="text/javascript">
+
+  <!--  Screen-only styles  -->
+  <style type="text/css" media="screen">
+      body
+      {
+        background:       #ffffcc;
+        font-family:      sans-serif;
+        color:            #606010;
+        margin:           1em;
+      }
+
+  </style>
+
+  <!--  Media-independent styles  -->
+  <style type="text/css">
+    p { margin-left: 1em; margin-right: 1em; }
+    p.indent { margin-left: 2em; margin-right: 4em; }
+    table.form
+    {
+      background:         #ffffff;
+      color:              #000000;
+      border:             solid;
+      margin:             2em;
+      padding:            1em;
+    }
+  </style>
+
+
+<!-- Script Function Definitions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
+<script type="text/javascript">
+
+//  Set up list of departments by division if user has a decent
+//  browser.  Otherwise, make it alphabetic.
+//  And turn off the "Need JavaScript" note.
+//  -------------------------------------------------------------------
+  function setUpDeptList()
+  {
+    if ( document.all )
+    {
+      //  Internet Explorer
+      document.all["departmentsByDivision"].style.visibility
+                                                            = "hidden";
+      document.all["departmentsAlphabetically"].style.visibility 
+                                                           = "visible";
+      document.all[ "needJS" ].style.display = "none";
+    }
+    else
+    {
+      //  Mozilla, etc.
+      document.getElementById( "departmentsByDivision" )
+                                         .style.visibility = "visible";
+      document.getElementById( "departmentsAlphabetically" )
+                                          .style.visibility = "hidden";
+      document.getElementById( "needJS" ).style.display = "none";
+    }
+  }
+
+
+//  Modify form based on student/faculty status
+//  -------------------------------------------------------------------
+
+  //  Faculty Status
+  //  --------------
+  function itsaFac(form)
+  {
+    if ( document.all )
+    {
+      document.all["addrLabel"].innerHTML = "Office:";
+      document.all["citystate"].disabled = true;
+      document.all["citystate"].value = "Faculty - ignore";
+      document.all["zipcode"].disabled = true;
+      document.all["zipcode"].value = "ignore";
+      document.all["deptLabel"].innerHTML = "Department:";
+      document.all["ssNo"].disabled = true;
+      document.all["ssNo"].value = "Faculty - ignore";
+      document.all["gradDate"].disabled = true;
+      document.all["gradDate"].value = "Faculty - ignore";
+    }
+    else
+    {
+      //  Mozilla (grays out disabled fields)
+      document.getElementById("addrLabel").innerHTML = "Office:";
+      document.getElementById("citystate").disabled = true;
+      document.getElementById("citystate").value = "";
+      document.getElementById("zipcode").disabled = true;
+      document.getElementById("zipcode").value = "";
+      document.getElementById("deptLabel").innerHTML = "Department:";
+      document.getElementById("ssNo").disabled = true;
+      document.getElementById("ssNo").value = "";
+      document.getElementById("gradDate").disabled = true;
+      document.getElementById("gradDate").value = "";
+    }
+  }
+
+  //  Student Status
+  //  --------------
+  function itsaStud(form)
+  {
+    if ( document.all )
+    {
+      document.all["addrLabel"].innerHTML = "Mailing Address:";
+      document.all["citystate"].disabled = false;
+      document.all["citystate"].value = "";
+      document.all["zipcode"].disabled = false;
+      document.all["zipcode"].value = "";
+      document.all["deptLabel"].innerHTML = "Major:";
+      document.all["ssNo"].disabled = false;
+      document.all["gradDate"].disabled = false;
+      document.all["ssNo"].value = "";
+      document.all["gradDate"].value = "";
+    }
+    else
+    {
+      document.getElementById("addrLabel").innerHTML =
+                                                    "Mailing Address:";
+      document.getElementById("citystate").disabled = false;
+      document.getElementById("citystate").value = "";
+      document.getElementById("zipcode").disabled = false;
+      document.getElementById("zipcode").value = "";
+      document.getElementById("deptLabel").innerHTML        = "Major:";
+      document.getElementById("ssNo").disabled = false;
+      document.getElementById("gradDate").disabled = false;
+    }
+  }
+
+
+//  validate()
+//  -----------------------------------------------------------------
+/*
+ *  Checks all required fields have values and that emails agree.
+ */
+  function validate( form )
+  {
+    var isOK = true;
+
+    if ( form.applicant.value == "" )
+    {
+      alert( "You didn't enter your name!" );
+      isOK = false;
+    }
+
+    if (  (form.category.item(0).checked) ||
+          (form.category.item(1).checked) )
+    {
+      //  It's a student
+      form.ssNo.value = fixDashes( form.ssNo.value );
+      if ( form.ssNo.value == "" )
+      {
+        alert( "You must supply your student ID number." );
+        isOK = false;
+      }
+      if ( form.gradDate.value == "" )
+      {
+        alert( "Please enter your expected graduation date." );
+        isOK = false;
+      }
+      if (  (form.address.value == "") || 
+            (form.address.value.length < 7) )
+      {
+        alert( "Please supply a valid street address." );
+        isOK = false;
+      }
+
+      if (  (form.citystate.value == "") ||
+            (form.citystate.value.length < 5) ) // NY NY is valid
+      {
+        alert( "Please supply your city and state." );
+        isOK = false;
+      }
+      form.zipcode.value = fixZip( form.zipcode.value );
+      if ( form.zipcode.value == "" )
+      {
+        alert( "Please enter a valid Zip code." );
+        isOK = false;
+      }
+    }
+    else
+    {
+      //  Faculty
+    if ( form.address.value == "" )
+    {
+      alert( "Please supply your campus office address." );
+      isOK = false;
+    }
+
+      form.ssNo.value = "";
+      form.gradDate.value = "";
+      form.citystate = "";
+      form.zip = "";
+    }
+
+    if ( (form.departmentByDiv.value == "") &&
+         (form.departmentAlpha.value == "") )
+    {
+      alert( "You need to select your department or major." );
+      isOK = false;
+    }
+
+    if ( form.phone.value == "" )
+    {
+      alert( "You need to supply one or more phone numbers." );
+      isOK = false;
+    }
+    else if ( form.phone.value.length < 4 )
+    {
+      alert( "\"" + form.phone.value + 
+                                   "\" is not a valid phone number." );
+      isOK = false;
+    }
+
+    //  Email address checks.  Email is optional, but if present,
+    //  the two copies must be the same and must be in the form
+    //  name@address, although the name and address may be as short
+    //  as one character each.
+    if (  (0 == form.email_1.value.length) && 
+          (0 == form.email_2.value.length) )
+    {
+      var msg = "You did not provide an email address.\n";
+      msg += "  * Press OK to submit your application without ";
+      msg += "providing your email address.\n"
+      msg += "  * Press Cancel to go back to the form and enter your ";
+      msg += "address (recommended)."
+      if ( confirm(msg) )
+      {
+        //  User will submit without email.
+        ;
+      }
+      else
+      {
+        isOK = false;
+      }
+    }
+    else
+    {
+      if ( form.email_1.value != form.email_2.value )
+      {
+        alert( "The two email addresses are not the same." );
+        isOK = false;
+      }
+      else if ( form.email_1.value.search(/\w+@\w+/i) == -1 )
+      {
+        alert( "\"" + form.email_1.value + "\" is not a valid email " +
+                                                          "address." );
+        isOK = false;
+      }
+    }
+
+    if (  (form.firstStanding.value  == "none") &&
+          (form.secondStanding.value == "none") &&
+          (form.thirdStanding.value  == "none") &&
+          (form.firstOther.value   == "none") &&
+          (form.secondOther.value  == "none") &&
+          (form.thirdOther.value   == "none") )
+    {
+      alert( "You didn't select any committees!" );
+      isOK = false;
+    }
+
+    if ( form.statement.value.length < 20 )
+    {
+      alert( "You must provide a meaningful statement of your " +
+                  "qualifications and reasons for wishing to serve." );
+      isOK = false;
+    }
+
+    if (( (form.firstOther.value  == "A Search or Review Committee")
+       || (form.secondOther.value == "A Search or Review Committee")
+       || (form.thirdOther.value  == "A Search or Review Committee"))
+           && (form.additional.value.length < 10) )
+    {
+      alert( "Use the Additional Comments to name the search or " +
+      "review committee for which you are applying." );
+      isOK = false;
+    }
+
+    return isOK;
+  }
+
+
+  //  fixDashes()
+  //  -----------------------------------------------------------------
+  /*
+   *  Puts social-secutity number into canonical form.
+   *
+   *  Strips all non-digits; checks there are 9 digits remaining, and
+   *  inserts dashes in the proper places.
+   *
+   *  This version also accepts 4-digit numbers.
+   *
+   *  12/11/03: This version forces 4-digit numbers.
+   */
+    function fixDashes( v )
+    {
+      if ( v.length == 0 )
+      {
+        return v;
+      }
+      before = v;
+      after="";
+      for (var i=0; i< before.length; i++)
+      {
+        if ( before.charAt(i) >= '0' && before.charAt(i) <= '9' )
+          after = after + before.charAt(i);
+      }
+
+      if ( after.length == 4 )
+      {
+        //  Allow 4-digit student ID
+        return after;
+      }
+
+      //  Check for 9-digit version
+      if ( after.length != 9 )
+      {
+        alert ( "\"" + before + "\" is not a valid ID number" );
+        return "";
+      }
+
+      //  Insert dashes into the 9-digit version
+      fixed="";
+      /*  Discard the first 5 digits
+       *  --------------------------
+       *  for (var i=0; i<=2; i++) fixed = fixed + after.charAt(i);
+       *  fixed = fixed + '-';
+       *  for (var i=3; i<=4; i++) fixed = fixed + after.charAt(i);
+       *  fixed = fixed + '-';
+       */
+          for (var i=5; i<=8; i++) fixed = fixed + after.charAt(i);
+
+      return fixed;
+    }
+
+  //  fixZip()
+  //  -----------------------------------------------------------------
+  /*
+   *  Puts zip code into canonical form.
+   *
+   *  Strips all non-digits; checks there are 5 or 9 digits remaining,
+   *  and inserts a dash in the proper place if 9.
+   *
+   */
+    function fixZip( v )
+    {
+      before = v;
+      after="";
+      for (var i=0; i< before.length; i++)
+      {
+        if ( before.charAt(i) >= '0' && before.charAt(i) <= '9' )
+          after = after + before.charAt(i);
+      }
+
+      if ( after.length == 5 )
+      {
+        //  Allow 5-digit Zip
+        return after;
+      }
+
+      //  Check for 9-digit version
+      if ( after.length != 9 )
+      {
+        return "";
+      }
+
+      //  Insert dash into the 9-digit version
+      fixed="";
+      for (var i = 0; i <= 4; i++) fixed = fixed + after.charAt(i);
+      fixed = fixed + '-';
+      for (var i = 5; i <= 8; i++) fixed = fixed + after.charAt(i);
+
+      return fixed;
+    }
+
+</script>
+</head>
+
+<!--
+  Body Starts Here
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
+<body onLoad="setUpDeptList()">
+
+<center>
+
+<a name="top"></a>
+<table align="center">
+<col width="30%"><col width="30%"><col width="30%">
+<tr>
+
+  <td align="center"><font size="smaller"><a
+  href="http://www.qc.edu/AcademicSenate/">Academic Senate Home
+  Page</a></font>
+
+  <td align="center"><font size="smaller"><a
+  href="http://www.qc.edu/">Queens College Home Page</a></font>
+
+  <td align="center"><font size="smaller"><a
+  href="http://www.qc.edu/AcademicSenate/NomCom/">Nominating Committee
+  Home Page</a></font>
+
+</table>
+
+<h1>Application for Academic Senate Committee Membership</h1>
+</center>
+
+<p>At Queens College, the Academic Senate is responsible for much of the
+institutional governance, and much of the work of the Senate is done
+through its standing and special committees.</p>
+
+<table align="center" width="80%" border="1" cellpadding="5" >
+  <tr><td>Membership on committees of the Academic Senate is open to
+  all faculty, and to all students who hold a GPA of 2.0 or above. You
+  may not serve on more than one of the standing committees at a time,
+  but you may serve on other committees in addition to a standing
+  committee.
+</table>
+
+<p>Seats on Senate committees are for two years, normally starting on
+January first following the Academic Senate's December meeting. 
+Elections to fill open seats are held as needed.</p>
+
+<p>Brief descriptions of the committees can be found <a
+href="#responsibilities">below</a>. Fuller descriptions and names of
+current committee members are available on the <a
+href="http://www.qc.edu/AcademicSenate/">Academic Senate</a> web
+site.</p>
+
+<p>Additional information, including paper copies of this application
+form and the most up to date list of current committee members, can be
+obtained by contacting the Senate office, Kiely Hall Room 810: 
+Telephone (718)&nbsp;997-5880, Fax (718)&nbsp;997-5884, or Email
+(Senate'at'qc.edu).</p>
+
+<hr>
+<h3>Notes</h3>
+
+  <ul>
+
+    <li><p><b>Please do not submit an application for anyone other than
+        yourself.</b></p>
+
+    <li id="needJS"> <p><b>Your web browser does not have Javascript
+        support enabled.</b><br>You will see some strange things on the
+        page, and your application may be rejected when you submit
+        it.</p>
+
+        <p>Most browsers enable Javascript by default, but you should
+        reenable it for this page to work "right."</p>
+
+    <li><p><b>All fields are required,</b> except as noted.</p>
+  
+  </ul>
+<hr>
+
+<h2>Application Form:</h2>
+
+
+<!--  The form starts here
+      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
+<form method="post" onsubmit="return validate(this)"
+action="http://qcpages.qc.edu/cgi-bin/cgiwrap/senate/submit_application.php">
+
+  <table class="form">
+
+<!--  Name
+      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+    <tr>
+      <th align="right"><label for="applicant">Your Name:</label>
+      <td colspan="2"><input  type="text" name="applicant"
+                              id="applicant" maxLength="60"
+                              size="60">
+
+<!--  Category
+      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+    <tr>
+      <th align="right">Check one:
+      <td colspan="2">
+
+        <input  type="radio" name="category" 
+                value="Undergraduate Student" onclick="itsaStud()"
+                id="undergrad" checked>
+          <label for="undergrad">Undergraduate Student</label>
+
+        <input  type="radio" name="category" value="Graduate Student"
+                  onclick="itsaStud()" id="grad">
+          <label for="grad">Graduate Student</label>
+
+        <input  type="radio" name="category" value="Faculty"
+                  onclick="itsaFac()" id="faculty">
+          <label for="faculty">Faculty</label>
+
+<!--  Student ID
+      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+    <tr>
+      <th align="right">
+                       <label for="ssNo">Four-digit Student ID:</label>
+      <td colspan="2"><input  type="text" name="ssNo" id="ssNo"
+                              maxLength="4" size="4" value=""
+                              onchange="value=fixDashes(value)">
+
+<!--  Student Graduation Date
+      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+    <tr>
+      <th align="right">
+                 <label for="gradDate">Graduation Date (mm/yy):</label>
+      <td colspan="2"><input  type="text" name="gradDate" id="gradDate"
+                              maxLength="11" size="11" value="">
+
+<!--  Major or Department
+      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+    <tr>
+      <th align="right" valign="baseline">
+                                       <span id=deptLabel>Major:</span>
+      <td colspan="2" valign="baseline">
+        <span id="departmentsByDivision">
+        <select name="departmentByDiv" id="dept_by_div">
+          <option selected value="">Select your department or major
+          <optgroup label="Arts and Humanities">
+            <option value="ah: Art">Art
+            <option value=
+   "ah: Classical, Middle Eastern, &amp; Asian Languages and Cultures">
+          Classical, Middle Eastern, &amp; Asian Languages and Cultures
+            <option value="ah: Comparative Literature">
+                                                 Comparative Literature
+            <option value="ah: Drama, Theater, and Dance">
+                                              Drama, Theater, and Dance
+            <option value="ah: English">English
+            <option value="ah: European Languages and Literature">
+                                      European Languages and Literature
+            <option value="ah: Hispanic Languages and Literature">
+                                      Hispanic Languages and Literature
+            <option value="ah: Library">Library
+            <option value=
+                         "ah: Linguistics and Communication Disorders">
+                                Linguistics and Communication Disorders
+            <option value="ah: Media Studies">Media Studies
+            <option value="ah: Aaron Copland School of Music">
+                                          Aaron Copland School of Music
+          </optgroup>
+          <optgroup label="Education">
+            <option value="ed: Educational and Community Programs">
+                                     Educational and Community Programs
+            <option value="ed: EECE">
+                               Elementary and Early Childhood Education
+            <option value="ed: Science Teacher Careers">
+                                                Science Teacher Careers
+            <option value="ed: Secondary Ed.">Secondary Education &amp;
+                                                         Youth Services
+          </optgroup>
+          <optgroup label="Natural Sciences">
+            <option value="ns: Biology">Biology
+            <option value="ns: Chemistry and Biochemistry">
+                                             Chemistry and Biochemistry
+            <option value="ns: Computer Science">Computer Science
+            <option value="ns: FNES">
+                               Family, Nutrition, and Exercise Sciences
+            <option value="ns: Mathematics">Mathematics
+            <option value="ns: Physics">Physics
+            <option value="ns: Psychology">Psychology
+            <option value="ns: EES">
+                             School of Earth and Environmental Sciences
+            <option value="ns: Science Teacher Careers">
+                                                Science Teacher Careers
+          </optgroup>
+          <optgroup label="Social Sciences">
+            <option value="ss: Accounting and Information Systems">
+                                     Accounting and Information Systems
+            <option value="ss: Anthropology">Anthropology
+
+            <option value="ss: Bachelors of Business
+                    Administration">Bachelors of Business
+                    Administration
+            <option value="ss: BALA">Business and Liberal Arts
+            <option value="ss: Economics">Economics
+            <option value="ss: Graduate School of Library and
+                    Information Studies">Graduate School of Library and
+                                                    Information Studies
+            <option value="ss: History">History
+            <option value="ss: Irish Studies">Irish Studies
+            <option value="ss: JALA">Journalism and Liberal Arts
+            <option value="ss: Jewish Studies">Jewish Studies
+            <option value="ss: Labor Studies">Labor Studies
+            <option value="ss: Latin American Area Studies">
+                                            Latin American Area Studies
+            <option value="ss: Philosophy">Philosophy
+            <option value="ss: Political Science">Political Science
+            <option value="ss: Sociology">Sociology
+            <option value="ss: Urban Studies">Urban Studies
+            <option value="ss: Women's Studies">Women's Studies
+          </optgroup>
+          <optgroup label="No major or not in a division">
+            <option value="un: Law School Faculty">CUNY Law School Faculty
+            <option value="un: Law School Student">CUNY Law School Student
+            <option value="un: Graduate Center Student">CUNY Graduate
+            Center Student teaching or taking courses at Queens
+            <option value="un: Undeclared">Undeclared Major
+          </optgroup>
+        </select>
+        </span>
+        <span id="departmentsAlphabetically">
+        <select name="departmentAlpha" id="dept_alpha">
+          <option selected value="">Select your department or major
+            <option value="ah: Aaron Copland School of Music">
+                                          Aaron Copland School of Music
+            <option value="ss: Accounting and Information Systems">
+                                     Accounting and Information Systems
+            <option value="ss: Anthropology">Anthropology
+            <option value="ah: Art">Art
+            <option value="ss: Bachelors of Business Administration">
+                                   Bachelors of Business Administration
+            <option value="ns: Biology">Biology
+            <option value="ss: BALA">Business and Liberal Arts
+            <option value="ns: Chemistry and Biochemistry">
+                                             Chemistry and Biochemistry
+            <option value=
+   "ah: Classical, Middle Eastern, &amp; Asian Languages and Cultures">
+          Classical, Middle Eastern, &amp; Asian Languages and Cultures
+            <option value="ah: Comparative Literature">
+                                                 Comparative Literature
+            <option value="ns: Computer Science">Computer Science
+            <option value="un: Law School Faculty">CUNY Law School Faculty
+            <option value="un: Law School Student">CUNY Law School Student
+            <option value="un: Graduate Center Student">CUNY Graduate
+            Center Student teaching or taking courses at Queens
+            <option value="ah: Drama, Theater, and Dance">
+                                              Drama, Theater, and Dance
+            <option value="ss: Economics">Economics
+            <option value="ed: Educational and Community Programs">
+                                     Educational and Community Programs
+            <option value="ed: EECE">
+                               Elementary and Early Childhood Education
+            <option value="ah: English">English
+            <option value="ah: European Languages and Literature">
+                                      European Languages and Literature
+            <option value="ns: FNES">
+                               Family, Nutrition, and Exercise Sciences
+            <option value="ss: Graduate School of Library and
+                    Information Studies">Graduate School of Library and
+                                                    Information Studies
+            <option value="ah: Hispanic Languages and Literature">
+                                      Hispanic Languages and Literature
+            <option value="ss: History">History
+            <option value="ss: Irish Studies">Irish Studies
+            <option value="ss: Jewish Studies">Jewish Studies
+            <option value="ss: JALA">Journalism and Liberal Arts
+            <option value="ss: Labor Studies">Labor Studies
+            <option value="ss: Latin American Area Studies">
+                                            Latin American Area Studies
+            <option value="ah: Library">Library
+            <option value=
+                         "ah: Linguistics and Communication Disorders">
+                                Linguistics and Communication Disorders
+            <option value="ns: Mathematics">Mathematics
+            <option value="ah: Media Studies">Media Studies
+            <option value="ss: Philosophy">Philosophy
+            <option value="ns: Physics">Physics
+            <option value="ss: Political Science">Political Science
+            <option value="ns: Psychology">Psychology
+            <option value="ns: EES">
+                             School of Earth and Environmental Sciences
+            <option value="ed-ns: Science Teacher Careers">
+                                                Science Teacher Careers
+            <option value="ed: Secondary Ed.">Secondary Education &amp;
+                                                         Youth Services
+            <option value="ss: Sociology">Sociology
+            <option value="un: Undeclared">UNDECLARED (Student
+                                                     with no major yet)
+            <option value="ss: Urban Studies">Urban Studies
+            <option value="ss: Women's Studies">Women's Studies
+          </select>
+        </span>
+
+<!--  Mailing or Campus Address
+      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+    <tr>
+      <th align="right"><div id=addrLabel>Street Address:</div>
+      <td colspan="2"><input type="text" name="address" id="address"
+                                             maxLength="100" size="80">
+    <tr>
+      <th align="right">City, State:
+      <td colspan="2"><input type="text" name="citystate"
+                               id="citystate" maxLength="80" size="60">
+      <b>&nbsp;&nbsp;&nbsp;&nbsp;Zip:&nbsp;&nbsp;</b><input type="text"
+                  name="zipcode" id="zipcode" maxLength="20" size="10">
+
+<!--  Telephone
+      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+    <tr>
+      <th align="right"><label for="phone">Telephone Numbers:</label>
+      <td colspan="2">
+        <input type="text" name="phone" id="phone"
+                           maxLength="60" size="40">
+
+<!--  E-mail Address
+      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+    <tr>
+      <th align="right"><label for="email_1">E-mail:</label>
+      <td colspan="2"><input  type="text" name="email_1" id="email_1"
+                              maxLength="60" size="40">
+
+<!--  Confirm E-mail Address
+      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+    <tr>
+      <th align="right"><label for="email_2">Confirm E-mail:</label>
+      <td colspan="2"><input type="text" name="email_2" id="email_2"
+                             maxLength="60" size="40">
+
+<!--  Standing Committees
+      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+    <tr>
+      <th colspan="3"><hr>
+    <tr>
+      <td align="left" valign="top" rowspan="3"><b>I am willing to
+      serve on the <a href="#standing">standing committees</a>
+      indicated.</b>
+      <br>You may serve on no more than one standing committee.
+ 
+        <td align="right">
+                       <label for="firstStanding">First Choice:</label>
+        <td><select name="firstStanding" id="firstStanding">
+              <option selected value="none">none
+              <option>Admissions and Re-entry Standards
+              <option>Campus Affairs
+              <option>Campus Environment
+              <option>Elections
+              <option>Graduate Curriculum
+              <option>Graduate Scholastic Standards
+              <option>International Student Affairs
+              <option>Nominating Committee
+              <option>Policy Board on Administration
+              <option>Teaching Excellence and Evaluation
+              <option>Undergraduate Curriculum
+              <option>Undergraduate Scholastic Standards
+            </select>
+          <br><input type="checkbox" name="renewFirstStanding"
+                                               id="renewFirstStanding">
+                       <label for="renewFirstStanding">Renewal?</label>
+      <tr>
+        <td align="right">
+                     <label for="secondStanding">Second Choice:</label>
+        <td><select name="secondStanding" id="secondStanding">
+              <option selected value="none">none
+              <option>Admissions and Re-entry Standards
+              <option>Campus Affairs
+              <option>Campus Environment
+              <option>Elections
+              <option>Graduate Curriculum
+              <option>Graduate Scholastic Standards
+              <option>International Student Affairs
+              <option>Nominating Committee
+              <option>Policy Board on Administration
+              <option>Teaching Excellence and Evaluation
+              <option>Undergraduate Curriculum
+              <option>Undergraduate Scholastic Standards
+            </select>
+          <br><input type="checkbox" name="renewSecondStanding"
+                                              id="renewSecondStanding">
+                      <label for="renewSecondStanding">Renewal?</label>
+      <tr>
+        <td align="right">
+                       <label for="thirdStanding">Third Choice:</label>
+        <td><select name="thirdStanding" id="thirdStanding">
+              <option selected value="none">none
+              <option>Admissions and Re-entry Standards
+              <option>Campus Affairs
+              <option>Campus Environment
+              <option>Elections
+              <option>Graduate Curriculum
+              <option>Graduate Scholastic Standards
+              <option>International Student Affairs
+              <option>Nominating Committee
+              <option>Policy Board on Administration
+              <option>Teaching Excellence and Evaluation
+              <option>Undergraduate Curriculum
+              <option>Undergraduate Scholastic Standards
+            </select>
+            <br><input type="checkbox" name="renewThirdStanding"
+                                               id="renewThirdStanding">
+                       <label for="renewThirdStanding">Renewal?</label>
+
+<!--  Other Committees
+      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+    <tr>
+      <th colspan="3"><hr>
+
+    <tr>
+      <th align="left" rowspan="3" valign="top"> I am willing to serve
+          on the <a href="#special">Special</a>, <a
+          href="#college">College</a>, and <a href="#search">Search or
+          Review</a> committees indicated.
+
+        <td align="right">
+          <label for="firstOther">First Choice:</label>
+        <td><select name="firstOther" id="firstOther">
+              <option selected value="none">none
+              <option>Special Committee on Governance
+              <option>Special Committee on Technology and Library
+              <option>College Committee on Honors and Awards
+              <option>College Committee on Athletic Policy
+              <option 
+              onClick="alert( 'Tell which search or review committee' +
+                            ' in the Additional Comments section.' );">
+                      A Search or Review Committee
+            </select>
+            <br><input type="checkbox" name="renewFirstOther"
+                                                  id="renewFirstOther">
+                          <label for="renewFirstOther">Renewal?</label>
+
+      <tr>
+        <td align="right">
+          <label for="secondOther">Second Choice:</label>
+        <td><select name="secondOther" id="secondOther">
+              <option selected value="none">none
+              <option>Special Committee on Governance
+              <option>Special Committee on Technology and Library
+              <option>College Committee on Honors and Awards
+              <option>College Committee on Athletic Policy
+              <option 
+              onClick="alert( 'Tell which search or review committee' +
+                            ' in the Additional Comments section.' );">
+                      A Search or Review Committee
+          </select>
+          <br><input type="checkbox" name="renewSecondOther"
+                                                 id="renewSecondOther">
+                         <label for="renewSecondOther">Renewal?</label>
+
+      <tr>
+        <td align="right">
+          <label for="thirdOther">Third Choice:</label>
+        <td><select name="thirdOther" id="thirdOther">
+              <option selected value="none">none
+              <option>Special Committee on Governance
+              <option>Special Committee on Technology and Library
+              <option>College Committee on Honors and Awards
+              <option>College Committee on Athletic Policy
+              <option
+              onClick="alert( 'Tell which search or review committee' +
+                            ' in the Additional Comments section.' );">
+                      A Search or Review Committee
+            </select>
+            <br><input type="checkbox" name="renewThirdOther"
+                                                  id="renewThirdOther">
+                          <label for="renewThirdOther">Renewal?</label>
+
+<!--  Statement
+      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+    <tr>
+      <th colspan="3"><hr>
+    <tr>
+      <th colspan="3">In the space below, write a brief statement
+      indicating your qualifications for serving on an Academic Senate
+      committee and the reasons for choosing the committee(s) you are
+      interested in.
+    <tr>
+      <td colspan="3" align="center"><textarea rows="10" cols="72"
+      name="statement"></textarea>
+
+<!--  Additional
+      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+    <tr>
+      <th colspan="3"><hr>
+    <tr>
+
+      <td align="left" valign="top" colspan="3"><b>Additional
+      Comments</b>
+      <ul>
+
+        <li>If you are applying for a search or review committee, tell
+        which one you are applying for here.  Be sure to indicate your
+        qualifications and reasons for serving in the section above.
+
+        <li>If you would like to list more than three standing
+        committees or more than three other committees, you may list
+        additional committees here.
+
+        <li>Otherwise, this field is optional.
+
+      </ul>
+    <tr>
+      <td colspan="3" align="center">
+        <textarea rows="10" cols="40" name="additional"></textarea>
+
+<!--  Submit Application
+      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+    <tr>
+      <th colspan="3"><hr>
+    <tr>
+      <td colspan="3" align="center">
+        <input type="submit"  value="Submit Application">
+        <input type="reset"   value="Start Over">
+
+  </table>
+
+</form>
+<p>
+ <a href="http://validator.w3.org/check/referer">
+   <img height=31 alt="Valid HTML 4.0!" src="vh40.png"
+        width=88 
+        border=0></a>
+  <a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+       src="http://jigsaw.w3.org/css-validator/images/vcss" 
+       alt="Valid CSS!">
+ </a>
+</p>
+
+
+
+<hr>
+<a name="responsibilities"></a>
+<p align="center"><a href="#top">Top of Page</a></p>
+<hr>
+
+<h2 align="center">Committee Responsibilities</h2>
+
+<p>Fuller descriptions and names of current committee members are
+available on the <a href="http://www.qc.edu/AcademicSenate/">Academic
+Senate web site</a>.  Additional information can be found by contacting
+the Senate office, Kiely Hall room 810: Telephone (718)&nbsp;997-5880,
+Fax (718)&nbsp;997-5884, or Email (Senate'at'qc.edu).</p>
+
+<h3><a name="standing">Standing Committees</a></h3>
+<table align="center" width="90%" cellpadding="5">
+
+<tr><td valign="top">
+Admissions and Re-entry Standards:
+
+  <td valign="top"> To review and recommend college policies for
+  undergraduate admissions procedures and requirements, matriculation
+  of nondegree students, and acceptance of external course work; to
+  hear and act on appeals from students concerning the college policies
+  and from students who have not passed the CUNY Assessment Tests
+  within 60 credits of college work.
+
+<tr><td valign="top">
+Campus Affairs:
+
+  <td valign="top"> To develop policies related to noninstructional
+  matters of campus life, propose academic year calendars, and to
+  foster and stimulate interactions with the community at large.
+
+<tr><td valign="top">
+Campus Environment:
+
+  <td valign="top"> To review, suggest, and make recommendations on any
+  aspect concerning campus grounds; to review and recommend naming of
+  buildings and the creation of memorials.
+
+<tr><td valign="top">
+Elections:
+
+  <td valign="top"> To establish procedures and supervise the election
+  of the Academic Senate and the Faculty Student Disciplinary
+  Committee, Academic Senate referenda, and, upon request, the
+  elections and referenda of the student governments.
+
+<tr><td valign="top">
+Executive Committee:
+
+  <td valign="top"> To propose the agenda for all Academic Senate
+  meetings, to act for the Senate between meetings, to review all
+  committee reports and recommendations, and to make such
+  recommendations as it deems necessary.
+
+<tr><td valign="top">
+Graduate Curriculum:
+
+  <td valign="top"> To make recommendations to the Academic Senate in
+  all matters of graduate curriculum.
+
+<tr><td valign="top">
+Graduate Scholastic Standards:
+
+  <td valign="top"> To review policies and procedures of graduate
+  programs; to receive and act upon student appeals from decisions
+  related to academic matters.
+
+<tr><td valign="top">
+International Student Affairs:
+
+  <td valign="top"> To review and recommend policies pertaining to
+  foreign students in all areas of academic life; to advise the
+  administration in matters pertaining to international students.
+
+<tr><td valign="top">
+Nominating Committee:
+
+  <td valign="top"> To submit nominations for committee membership to
+  the Academic Senate.
+
+<tr><td valign="top">
+Policy Board on Administration:
+
+  <td valign="top"> To advise on all major policy decisions, monitor
+  performance, and hear complaints in the areas of Business Office,
+  Buildings and Grounds, Data Processing, Records Management,
+  Registrar, Security, Parking, Central Mail Services, Telephone,
+  Office and Reprographic Services, Campus Planning, Space Management,
+  Management Information Services, and selection and allocation of
+  office machines.
+
+<tr><td valign="top">
+Teaching Excellence and Evaluation:
+
+  <td valign="top"> To review or construct a College-wide course and
+  faculty evaluation questionnaire, to propose the format and manner of
+  tabulation, to work with the office of the Provost in the schedule of
+  administration, and to submit to the Academic Senate recommendations
+  that promote excellence in teaching.
+
+<tr><td valign="top">
+Undergraduate Curriculum:
+
+  <td valign="top"> To make recommendations to the Academic Senate in
+  all matters of undergraduate curriculum.
+
+<tr><td valign="top">
+Undergraduate Scholastic Standards:
+
+  <td valign="top"> To review and make recommendations on policies and
+  procedures concerning undergraduate scholastic standards including
+  grades and grading policies; to apply the academic standards of the
+  College to individual students from admission until the granting of a
+  degree; and to receive and act upon student appeals regarding
+  academic matters.
+
+</table>
+
+<h3><a name="special">Special Committees</a></h3>
+<table align="center" width="90%" cellpadding="5">
+
+<tr><td valign="top">
+Special Committee on Governance:
+
+<td valign="top"> To review and recommend all material pertaining to
+the Charter, Bylaws, and Standing Rules of the Academic Senate.
+
+<tr><td valign="top">
+Special Committee on Technology and Library:
+
+<td valign="top"> To review the policies of the Queens College Library
+and Office of Information Technology and make recommendations
+concerning these policies to the Academic Senate; to advise appropriate
+college officers in matters concerning the Library and instructional
+technology resources; to encourage and support the coordinated
+development of the Library and College's technological resources for
+instruction and research.
+
+</table>
+
+<h3><a name="college">College Committees</a></h3>
+<table align="center" width="90%" cellpadding="5">
+<tr><td valign="top">
+College Committee on Honors and Awards:
+
+<td valign="top">To select recipients for existing College-wide honors
+and awards, to recommend criteria for College-wide honors, to evaluate
+and recommend the establishment of College-wide honors, and to
+stimulate recognition and appreciation of high academic achievement.
+
+<tr><td valign="top">
+College Committee on Athletic Policy:
+
+<td valign="top">To monitor the intercollegiate athletic program at
+Queens College, to consult with and advise the Director of Athletics
+and/or the Sports Allocation Board (SAB) on matters of athletic policy
+and administration, to submit to the Academic Senate an annual report
+prior to April 15 on the implementation of Senate policies regarding
+intercollegiate athletics, to recommend to the Academic Senate changes
+in athletic policies, as necessary. 
+
+</table>
+
+
+<h3><a name="search">Search and Review Committees</a></h3>
+
+  <p>The Deans, Provost, and Chief Librarian are formally reviewed
+  every five years.  Search committees for replacements for the Deans
+  are formed as needed.  Openings for these committees are announced to
+  the college community as they become available.</p>
+
+<hr>
+<table align="center">
+<col width="30%"><col width="30%"><col width="30%">
+<tr>
+
+  <td align="center"><font size="smaller"><a
+  href="http://www.qc.edu/AcademicSenate/">Academic Senate Home
+  Page</a></font>
+
+  <td align="center"><font size="smaller"><a
+  href="http://www.qc.edu/">Queens College Home Page</a></font>
+
+  <td align="center"><font size="smaller"><a
+  href="http://www.qc.edu/AcademicSenate/NomCom/">Nominating Committee
+  Home Page</a></font>
+
+<tr>
+
+  <td colspan="3" align="center"><font size="smaller"><a
+  href="#top">Top of Page</a></font>
+
+</table>
+
+</body>
+</html>
