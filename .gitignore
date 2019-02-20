@@ -3,11 +3,11 @@
 
 /.htaccess
 
-/Curriculum/
+/Curriculum/*
 
 /test_Curriculum/
 
-/GEAC
+/GEAC/*
 
-/NomCom
+/NomCom/*
 
