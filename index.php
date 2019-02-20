@@ -45,9 +45,9 @@
       -->
       <dt><a href='./Curriculum'>Curriculum Matters</a></dt>
       <dd>
-          See also the <a
-          href='http://gened.qc.cuny.edu'>General
-          Education Website</a>.
+          See also the <a href='http://gened.qc.cuny.edu'>General Education</a> and
+          <a href="http://qcpages.qc.cuny.edu/AcademicSenate/UCC/">Undergraduate Curriculum
+          Committee</a> websites.
       </dd>
 <!--
       <dt><a href="./NomCom/">Nominating Committee</a></dt>
