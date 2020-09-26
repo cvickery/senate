@@ -1,0 +1,3 @@
+[submodule "Curriculum"]
+	path = Curriculum
+	url = https://github.com/cvickery/senate-curriculum
